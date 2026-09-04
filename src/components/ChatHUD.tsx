@@ -24,8 +24,6 @@ import {
   Zap,
   ChevronDown,
   History,
-  Lock,
-  Crown,
 } from "lucide-react";
 
 interface ChatHUDProps {
@@ -41,8 +39,6 @@ interface ChatHUDProps {
   onSelectModel?: (modelId: AIModelId) => void;
   onOpenModelsMatrix?: () => void;
   onOpenHistory?: () => void;
-  subscriptionTier?: SubscriptionTier;
-  onOpenSubscription?: () => void;
   isLoggedIn?: boolean;
   onRequireSignIn?: () => void;
 }
@@ -60,8 +56,6 @@ export const ChatHUD: React.FC<ChatHUDProps> = ({
   onSelectModel,
   onOpenModelsMatrix,
   onOpenHistory,
-  subscriptionTier = "free",
-  onOpenSubscription,
   isLoggedIn = true,
   onRequireSignIn,
 }) => {
@@ -510,8 +504,6 @@ export const ChatHUD: React.FC<ChatHUDProps> = ({
           <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar">
             {AI_MODELS_ROSTER.slice(0, 9).map((m) => {
               const isSelected = activeModelId === m.id;
-              const isFree = isModelFree(m.id);
-              const isLocked = !isFree && subscriptionTier === "free";
               return (
                 <button
                   key={m.id}
@@ -520,8 +512,6 @@ export const ChatHUD: React.FC<ChatHUDProps> = ({
                   className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-medium whitespace-nowrap transition-all cursor-pointer border flex items-center gap-1 ${
                     isSelected
                       ? "font-bold shadow-md scale-105"
-                      : isLocked
-                      ? "bg-[#101720] border-amber-500/30 text-amber-200/70 hover:text-amber-200 hover:border-amber-400"
                       : "bg-[#101720] border-[#2D3748] text-white/60 hover:text-white hover:border-[#4B5563]"
                   }`}
                   style={
@@ -534,23 +524,12 @@ export const ChatHUD: React.FC<ChatHUDProps> = ({
                         }
                       : {}
                   }
-                  title={`${m.name} (${m.provider}) - ${isFree ? "Free Forever" : "Requires Pro/Max"}`}
+                  title={`${m.name} (${m.provider}) - Free & Unlocked`}
                 >
-                  {isLocked && <Lock className="w-2.5 h-2.5 text-amber-400" />}
                   <span>{m.name}</span>
                 </button>
               );
             })}
-            {subscriptionTier === "free" && onOpenSubscription && (
-              <button
-                type="button"
-                onClick={onOpenSubscription}
-                className="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold text-slate-950 bg-gradient-to-r from-amber-400 to-amber-500 hover:brightness-110 whitespace-nowrap cursor-pointer flex items-center gap-1 shadow-sm"
-              >
-                <Crown className="w-3 h-3" />
-                <span>UPGRADE</span>
-              </button>
-            )}
             {onOpenModelsMatrix && (
               <button
                 type="button"

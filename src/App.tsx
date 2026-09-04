@@ -22,7 +22,6 @@ import { ProfileModal } from "./components/ProfileModal";
 import { AboutModal } from "./components/AboutModal";
 import { SupportModal } from "./components/SupportModal";
 import { HeaderProfileVoice } from "./components/HeaderProfileVoice";
-import { SubscriptionModal } from "./components/SubscriptionModal";
 import { PowerSavingModal } from "./components/PowerSavingModal";
 import { PowerSavingModeSection } from "./components/PowerSavingModeSection";
 import { BrandLogo } from "./components/BrandLogo";
@@ -76,19 +75,6 @@ export default function App() {
   // Active theme overdrive mode (Build -> green, Fast -> red, Ultra Instinct -> purple, Relax -> pink, Normal -> cyan)
   const [themeMode, setThemeMode] = useState<QuantumThemeMode>("normal");
   const currentTheme = QUANTUM_THEMES[themeMode] || QUANTUM_THEMES.normal;
-
-  // Subscription Tier Management (Default: Free)
-  // Quantum AI (quantum-prime) is Free forever; all other AIs require Pro or Max
-  const [subscriptionTier, setSubscriptionTier] = useState<SubscriptionTier>(() => {
-    try {
-      const saved = localStorage.getItem("quantum_subscription_tier");
-      if (saved === "pro" || saved === "max" || saved === "free") return saved;
-    } catch {}
-    return "free";
-  });
-  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
-  const [subscriptionTargetModel, setSubscriptionTargetModel] = useState<AIModel | null>(null);
-  const [subscriptionToastMessage, setSubscriptionToastMessage] = useState<string | null>(null);
 
   // User Authentication & Identity State (SSO via Google, Apple, GitHub, Microsoft, or Email)
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
@@ -166,15 +152,10 @@ export default function App() {
     AI_MODELS_ROSTER.find((m) => m.id === activeModelId) || AI_MODELS_ROSTER[0];
 
   // Seamless Model Switching - 100% Free and Unrestricted for all users
-  const handleSelectModelWithSubscriptionCheck = (modelId: AIModelId) => {
+  const handleSelectModel = (modelId: AIModelId) => {
     setActiveModelId(modelId);
     playQuantumClick();
     return true;
-  };
-
-  const handleOpenSubscriptionModal = (targetModel?: AIModel | null) => {
-    setSubscriptionTargetModel(targetModel || null);
-    setShowSubscriptionModal(true);
   };
 
   // Quantum Edition: 1st is "basic" (basic information and science queries), 2nd is "ultra" (advanced theoretical STEM & OS)
@@ -1338,9 +1319,7 @@ How may I assist your research objectives today, sir? You may speak naturally vi
                 size="lg"
                 themeMode={themeMode}
                 modelId={activeModelId}
-                onSelectModel={handleSelectModelWithSubscriptionCheck}
-                subscriptionTier={subscriptionTier}
-                onOpenSubscription={handleOpenSubscriptionModal}
+                onSelectModel={handleSelectModel}
               />
             </div>
 
@@ -1540,9 +1519,7 @@ How may I assist your research objectives today, sir? You may speak naturally vi
                 themeMode={themeMode}
                 onSelectThemeMode={setThemeMode}
                 activeModelId={activeModelId}
-                onSelectModel={handleSelectModelWithSubscriptionCheck}
-                subscriptionTier={subscriptionTier}
-                onOpenSubscription={() => handleOpenSubscriptionModal(null)}
+                onSelectModel={handleSelectModel}
                 onOpenModelsMatrix={() => setActiveView("models")}
                 onOpenHistory={() => setActiveView("history")}
                 isLoggedIn={!!currentUser}
@@ -1586,8 +1563,6 @@ How may I assist your research objectives today, sir? You may speak naturally vi
                 handleSendMessage(prompt, undefined, domain || "ai_neural")
               }
               themeMode={themeMode}
-              subscriptionTier={subscriptionTier}
-              onOpenSubscription={() => handleOpenSubscriptionModal(null)}
             />
           </div>
         )}
@@ -1596,16 +1571,12 @@ How may I assist your research objectives today, sir? You may speak naturally vi
           <div className="min-h-[760px]">
             <AIModelsMatrix
               activeModelId={activeModelId}
-              onSelectModel={(id) => handleSelectModelWithSubscriptionCheck(id)}
+              onSelectModel={(id) => handleSelectModel(id)}
               onSendPromptToModel={(prompt, id) => {
-                const allowed = handleSelectModelWithSubscriptionCheck(id);
-                if (allowed) {
-                  setActiveView("dashboard");
-                  handleSendMessage(prompt, undefined, activeDomain, false, id);
-                }
+                handleSelectModel(id);
+                setActiveView("dashboard");
+                handleSendMessage(prompt, undefined, activeDomain, false, id);
               }}
-              subscriptionTier={subscriptionTier}
-              onOpenSubscription={(target) => handleOpenSubscriptionModal(target)}
               themeMode={themeMode}
             />
           </div>
@@ -1632,8 +1603,7 @@ How may I assist your research objectives today, sir? You may speak naturally vi
               onRestoreToActivePrompt={(prompt, domain, modelId) => {
                 if (domain) setActiveDomain(domain);
                 if (modelId) {
-                  const allowed = handleSelectModelWithSubscriptionCheck(modelId);
-                  if (!allowed) return;
+                  handleSelectModel(modelId);
                 }
                 setActiveView("dashboard");
                 handleSendMessage(prompt, undefined, domain || activeDomain, false, modelId);
@@ -1685,8 +1655,6 @@ How may I assist your research objectives today, sir? You may speak naturally vi
               onLogout={handleLogout}
               onBackToApp={() => setActiveView("dashboard")}
               themeMode={themeMode}
-              currentTier={subscriptionTier}
-              onOpenSubscription={() => handleOpenSubscriptionModal(null)}
             />
           </div>
         )}
@@ -1770,7 +1738,7 @@ How may I assist your research objectives today, sir? You may speak naturally vi
         isOpen={showManualModal}
         onClose={() => setShowManualModal(false)}
         onSelectModel={(modelId) => {
-          handleSelectModelWithSubscriptionCheck(modelId as AIModelId);
+          handleSelectModel(modelId as AIModelId);
         }}
         onSelectPrompt={(prompt, domain, mode) => {
           if (domain) setActiveDomain(domain);
@@ -1887,43 +1855,8 @@ How may I assist your research objectives today, sir? You may speak naturally vi
         currentUser={currentUser}
         onLogout={handleLogout}
         themeMode={themeMode}
-        currentTier={subscriptionTier}
         noticeMessage={authNoticeMessage}
       />
-
-      {/* Sovereign Subscription Modal */}
-      <SubscriptionModal
-        isOpen={showSubscriptionModal}
-        onClose={() => {
-          setShowSubscriptionModal(false);
-          setSubscriptionTargetModel(null);
-        }}
-        targetModel={subscriptionTargetModel}
-        currentTier={subscriptionTier}
-        onSelectTier={(tier) => {
-          setSubscriptionTier(tier);
-          try {
-            localStorage.setItem("quantum_subscription_tier", tier);
-          } catch {}
-          setSubscriptionToastMessage(
-            tier === "free"
-              ? "Switched to Free Tier (Quantum Prime 10M tokens forever free)"
-              : tier === "pro"
-              ? "Upgraded to Quantum PRO Tier! All frontier models unlocked."
-              : "Upgraded to Quantum MAX Tier! Infinite priority inference unlocked."
-          );
-          setTimeout(() => setSubscriptionToastMessage(null), 4000);
-        }}
-        themeMode={themeMode}
-      />
-
-      {/* Subscription Tier Notification Toast */}
-      {subscriptionToastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#0F1A2A] border border-cyan-400 text-cyan-200 px-4 py-3 rounded-xl shadow-[0_0_25px_rgba(0,242,255,0.3)] flex items-center gap-3 font-mono text-xs animate-bounce">
-          <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
-          <span>{subscriptionToastMessage}</span>
-        </div>
-      )}
     </div>
   );
 }

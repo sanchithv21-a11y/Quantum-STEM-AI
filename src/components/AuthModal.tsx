@@ -235,8 +235,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
                   <h3 className="text-sm font-bold text-white truncate">{currentUser.name}</h3>
-                  <span className="text-[9px] font-mono px-2 py-0.5 rounded-full font-bold uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-400/40">
-                    {currentUser.tier} tier
+                  <span className="text-[9px] font-mono px-2 py-0.5 rounded-full font-bold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">
+                    FULL ACCESS (FREE)
                   </span>
                 </div>
                 <div className="text-xs font-mono text-slate-400 truncate">{currentUser.email}</div>

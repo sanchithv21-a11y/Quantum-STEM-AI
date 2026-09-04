@@ -40,15 +40,11 @@ import {
   ChevronRight,
   Scale,
   Users,
-  Lock,
-  Crown,
 } from "lucide-react";
 
 interface CodingzWorkspaceProps {
   onSendToQuantum?: (prompt: string, domain?: STEMDomain) => void;
   themeMode?: QuantumThemeMode;
-  subscriptionTier?: SubscriptionTier;
-  onOpenSubscription?: () => void;
 }
 
 type CodingLanguage =
@@ -536,8 +532,6 @@ const CODING_AGENTS: CodingAgentSpec[] = [
 export const CodingzWorkspace: React.FC<CodingzWorkspaceProps> = ({
   onSendToQuantum,
   themeMode = "normal",
-  subscriptionTier = "free",
-  onOpenSubscription,
 }) => {
   const currentTheme = QUANTUM_THEMES[themeMode] || QUANTUM_THEMES.normal;
 
@@ -548,16 +542,12 @@ export const CodingzWorkspace: React.FC<CodingzWorkspaceProps> = ({
   // "stuffs" -> Developer power-tools (JSON, Regex, Base64/Hash, REST Tester, UUID/Unix)
   const [activeTab, setActiveTab] = useState<"ide" | "copilot" | "agents" | "stuffs">("ide");
 
-  // Selected Active AI Agent (Quantum Sovereign Prime is free for all users)
+  // Selected Active AI Agent - 100% Free & Unrestricted for all users
   const [selectedAgentId, setSelectedAgentId] = useState<AIModelId>("quantum-prime");
   const activeAgentSpec = CODING_AGENTS.find((a) => a.id === selectedAgentId) || CODING_AGENTS[0];
   const activeModelMeta = AI_MODELS_ROSTER.find((m) => m.id === selectedAgentId) || AI_MODELS_ROSTER[0];
 
   const handleSelectAgent = (agentId: AIModelId) => {
-    if (agentId !== "quantum-prime" && subscriptionTier === "free") {
-      onOpenSubscription && onOpenSubscription();
-      return;
-    }
     setSelectedAgentId(agentId);
   };
 

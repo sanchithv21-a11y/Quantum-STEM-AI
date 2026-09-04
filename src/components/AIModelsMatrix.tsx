@@ -27,8 +27,6 @@ import {
   Send,
   RefreshCw,
   Terminal,
-  Crown,
-  Lock,
 } from "lucide-react";
 
 interface AIModelsMatrixProps {
@@ -36,8 +34,6 @@ interface AIModelsMatrixProps {
   onSelectModel: (modelId: AIModelId) => void;
   onSendPromptToModel?: (prompt: string, modelId: AIModelId) => void;
   themeMode?: QuantumThemeMode;
-  subscriptionTier?: SubscriptionTier;
-  onOpenSubscription?: (targetModel?: AIModel) => void;
 }
 
 export const AIModelsMatrix: React.FC<AIModelsMatrixProps> = ({
@@ -45,8 +41,6 @@ export const AIModelsMatrix: React.FC<AIModelsMatrixProps> = ({
   onSelectModel,
   onSendPromptToModel,
   themeMode = "normal",
-  subscriptionTier = "free",
-  onOpenSubscription,
 }) => {
   const currentTheme = QUANTUM_THEMES[themeMode] || QUANTUM_THEMES.normal;
 

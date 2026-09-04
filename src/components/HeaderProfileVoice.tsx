@@ -65,8 +65,8 @@ export const HeaderProfileVoice: React.FC<HeaderProfileVoiceProps> = ({
             <span className="font-bold text-white max-w-[90px] truncate hidden sm:inline">
               {currentUser.name}
             </span>
-            <span className="text-[9px] px-1.5 py-0.2 rounded font-bold uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-              {currentUser.tier}
+            <span className="text-[9px] px-1.5 py-0.2 rounded font-bold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              FREE
             </span>
             <ChevronDown className="w-3 h-3 text-slate-400 group-hover:text-white transition-transform" />
           </button>
@@ -93,11 +93,8 @@ export const HeaderProfileVoice: React.FC<HeaderProfileVoiceProps> = ({
                     <div className="font-bold text-white text-sm truncate">{currentUser.name}</div>
                     <div className="text-[11px] text-slate-300 truncate select-all">{currentUser.email}</div>
                     <div className="flex items-center gap-1.5 mt-1">
-                      <span className="text-[9px] px-1.5 py-0.2 rounded font-bold uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                        {currentUser.tier}
-                      </span>
-                      <span className="text-[9px] text-emerald-400 font-bold uppercase">
-                        100% Free
+                      <span className="text-[9px] px-2 py-0.5 rounded font-bold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                        100% Free Lifetime
                       </span>
                     </div>
                   </div>

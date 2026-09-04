@@ -193,8 +193,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 <span className="text-[10px] text-cyan-400 tracking-wider font-bold uppercase">
                   SOVEREIGN IDENTITY
                 </span>
-                <span className="text-[10px] px-2 py-0.5 rounded font-bold uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                  {currentUser.tier}
+                <span className="text-[10px] px-2 py-0.5 rounded font-bold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  100% FREE
                 </span>
               </div>
 
