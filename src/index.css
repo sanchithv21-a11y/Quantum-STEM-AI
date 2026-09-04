@@ -1,0 +1,125 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-orbitron: 'Orbitron', monospace, sans-serif;
+    --font-chakra: 'Chakra Petch', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-sans: 'Plus Jakarta Sans', sans-serif;
+    --sleek-bg: #020508;
+    --sleek-panel: #0A0F16;
+    --sleek-card: #060B12;
+    --sleek-border: #1E293B;
+    --sleek-cyan: #00F2FF;
+    --sleek-magenta: #FF007A;
+    --sleek-text: #E2E8F0;
+  }
+  
+  body {
+    font-family: var(--font-sans);
+    background-color: #020508;
+    color: #E2E8F0;
+    overflow-x: hidden;
+  }
+}
+
+.font-hud {
+  font-family: var(--font-orbitron);
+}
+
+.font-tech {
+  font-family: var(--font-chakra);
+}
+
+.font-code {
+  font-family: var(--font-mono);
+}
+
+/* Sleek Interface Grid & Glow Effects */
+.bg-sleek-dots {
+  background-image: radial-gradient(#00F2FF 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.bg-cyber-grid {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(0, 242, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 242, 255, 0.04) 1px, transparent 1px);
+}
+
+.hud-panel {
+  background: #0A0F16;
+  backdrop-filter: blur(16px);
+  border: 1px solid #1E293B;
+  box-shadow: 0 0 20px rgba(0, 242, 255, 0.04);
+}
+
+.hud-panel-active {
+  border-color: rgba(0, 242, 255, 0.4);
+  box-shadow: 0 0 25px rgba(0, 242, 255, 0.12), inset 0 0 15px rgba(0, 242, 255, 0.05);
+}
+
+.hud-glow-cyan {
+  text-shadow: 0 0 12px rgba(0, 242, 255, 0.6), 0 0 24px rgba(0, 242, 255, 0.3);
+}
+
+.hud-glow-magenta {
+  text-shadow: 0 0 12px rgba(255, 0, 122, 0.6), 0 0 24px rgba(255, 0, 122, 0.3);
+}
+
+.glow-border-cyan {
+  box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);
+}
+
+.glow-border-magenta {
+  box-shadow: 0 0 15px rgba(255, 0, 122, 0.3);
+}
+
+/* Custom Futuristic Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: #060B12;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 242, 255, 0.3);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 242, 255, 0.6);
+}
+
+/* Keyframes for HUD Rotating Rings */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes spin-reverse-slow {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes pulse-quantum {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.04); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 24s linear infinite;
+}
+
+.animate-spin-reverse {
+  animation: spin-reverse-slow 18s linear infinite;
+}
+
+.animate-quantum-pulse {
+  animation: pulse-quantum 3s ease-in-out infinite;
+}
+

@@ -1,0 +1,38 @@
+[
+  {
+    "id": "TICK-230310-1WOY7",
+    "ticketId": "TICK-230310-1WOY7",
+    "userEmail": "student_verified@gmail.com",
+    "userName": "Rohan",
+    "subject": "Vector Cross Product Sign Error",
+    "message": "The cross product of i and j gave -k instead of +k in step 3.",
+    "category": "Calculation / Math Error",
+    "recipients": [
+      "sanchithv21@gmail.com",
+      "sanchithvinod21@outlook.com"
+    ],
+    "timestamp": "2026-09-04T09:47:10.310Z",
+    "status": "received",
+    "dispatchedVia": []
+  },
+  {
+    "id": "TICK-915336-19956",
+    "ticketId": "TICK-915336-19956",
+    "userEmail": "gauthamv12@gmail.com",
+    "userName": "Gautham V",
+    "subject": "About the app",
+    "message": "Hello Sir, \nI am Gautham V. I used this app and it is good. Thank u for building this app.\n\nRegards;\nGautham V",
+    "category": "General Complaint",
+    "recipients": [
+      "sanchithv21@gmail.com",
+      "sanchithvinod21@outlook.com"
+    ],
+    "telemetry": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+      "timestamp": "2026-09-04T09:41:54.738Z"
+    },
+    "timestamp": "2026-09-04T09:41:55.336Z",
+    "status": "received",
+    "dispatchedVia": []
+  }
+]
