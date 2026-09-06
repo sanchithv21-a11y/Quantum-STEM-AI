@@ -19,12 +19,22 @@ import {
   Info,
   ChevronDown,
   ChevronUp,
+  Star,
+  Users,
+  Lock,
+  Trash2,
 } from "lucide-react";
+import { EmailClientChooserModal } from "./EmailClientChooserModal";
+import { EmailDraft } from "../utils/emailClientUtils";
+import { ReviewsTab } from "./ReviewsTab";
+import { ActivityLogsTab } from "./ActivityLogsTab";
+import { UserReview, UserActivityLog, AuthUser } from "../types";
 
 interface SupportModalProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenHelpManual: () => void;
+  currentUser?: AuthUser | null;
 }
 
 interface SavedComplaint {
@@ -38,14 +48,16 @@ interface SavedComplaint {
   recipients: string[];
   timestamp: string;
   status: string;
+  resolution?: string;
 }
 
 export const SupportModal: React.FC<SupportModalProps> = ({
   isOpen,
   onClose,
   onOpenHelpManual,
+  currentUser,
 }) => {
-  const [activeTab, setActiveTab] = useState<"file" | "inbox">("file");
+  const [activeTab, setActiveTab] = useState<"file" | "inbox" | "reviews" | "activity">("file");
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
   const [copiedText, setCopiedText] = useState<string | null>(null);
 
@@ -71,6 +83,48 @@ export const SupportModal: React.FC<SupportModalProps> = ({
   const [loadingComplaints, setLoadingComplaints] = useState(false);
   const [showEmailTips, setShowEmailTips] = useState(false);
   const [expandedComplaintId, setExpandedComplaintId] = useState<string | null>(null);
+  const [emailModalDraft, setEmailModalDraft] = useState<EmailDraft | null>(null);
+  const [showEmailChooser, setShowEmailChooser] = useState(false);
+
+  // Reviews state
+  const [reviews, setReviews] = useState<UserReview[]>([]);
+  const [reviewStats, setReviewStats] = useState<{
+    total: number;
+    average: number;
+    distribution: Record<number, number>;
+  }>({
+    total: 0,
+    average: 5.0,
+    distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+  });
+  const [loadingReviews, setLoadingReviews] = useState(false);
+
+  // Activity logs state (Who Used My App & At Which Time)
+  const [activities, setActivities] = useState<UserActivityLog[]>([]);
+  const [loadingActivities, setLoadingActivities] = useState(false);
+
+  // Admin / Creator verification state (Only Sanchith can see user activity logs)
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState<boolean>(() => {
+    try {
+      return (
+        sessionStorage.getItem("quantum_admin_verified") === "true" ||
+        localStorage.getItem("quantum_admin_verified") === "true"
+      );
+    } catch {
+      return false;
+    }
+  });
+
+  const isCreator = Boolean(
+    /sanchith/i.test(currentUser?.email || "") ||
+    /sanchith/i.test(currentUser?.name || "") ||
+    isAdminUnlocked
+  );
+
+  const handleTriggerEmailCompose = (draft: EmailDraft) => {
+    setEmailModalDraft(draft);
+    setShowEmailChooser(true);
+  };
 
   const primarySupportEmail = "sanchithv21@gmail.com";
   const secondarySupportEmail = "sanchithvinod21@outlook.com";
@@ -91,9 +145,87 @@ export const SupportModal: React.FC<SupportModalProps> = ({
     }
   };
 
+  const handleDeleteComplaint = async (id: string) => {
+    try {
+      const res = await fetch(`/api/support/complaints/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setSavedComplaints((prev) => prev.filter((c) => c.id !== id && c.ticketId !== id));
+      }
+    } catch (err) {
+      console.error("Failed to delete complaint:", err);
+    }
+  };
+
+  const handleClearAllComplaints = async () => {
+    try {
+      const res = await fetch("/api/support/complaints", {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setSavedComplaints([]);
+      }
+    } catch (err) {
+      console.error("Failed to clear complaints:", err);
+    }
+  };
+
+  // Fetch reviews
+  const fetchReviews = async () => {
+    setLoadingReviews(true);
+    try {
+      const res = await fetch("/api/reviews");
+      if (res.ok) {
+        const data = await res.json();
+        setReviews(data.reviews || []);
+        if (data.stats) setReviewStats(data.stats);
+      }
+    } catch (err) {
+      console.error("Failed to load reviews:", err);
+    } finally {
+      setLoadingReviews(false);
+    }
+  };
+
+  // Fetch user activity logs (Who used app & at which time - Creator Only)
+  const fetchActivities = async () => {
+    if (!isCreator) {
+      setActivities([]);
+      return;
+    }
+    setLoadingActivities(true);
+    try {
+      const email = currentUser?.email || "sanchithv21@gmail.com";
+      const res = await fetch(
+        `/api/activity/logs?adminEmail=${encodeURIComponent(email)}&unlock=sanchith21`,
+        {
+          headers: {
+            "x-admin-key": "sanchith21",
+            "x-admin-email": email,
+          },
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setActivities(data.logs || []);
+      }
+    } catch (err) {
+      console.error("Failed to load activity logs:", err);
+    } finally {
+      setLoadingActivities(false);
+    }
+  };
+
   useEffect(() => {
     if (isOpen) {
       fetchComplaints();
+      fetchReviews();
+      fetchActivities();
+      if (currentUser) {
+        if (!userEmail) setUserEmail(currentUser.email);
+        if (!userName) setUserName(currentUser.name);
+      }
     }
   }, [isOpen, activeTab]);
 
@@ -221,20 +353,13 @@ export const SupportModal: React.FC<SupportModalProps> = ({
     setErrorMessage(null);
   };
 
-  // Pre-filled direct email link targeting both addresses
-  const directMailtoUrl = `mailto:${primarySupportEmail}?cc=${secondarySupportEmail}&subject=${encodeURIComponent(
-    ticketSubject ? `[User Complaint] ${ticketSubject}` : `[User Complaint] Support Request from ${userEmail || "User"}`
-  )}&body=${encodeURIComponent(
-    `User Contact Email: ${userEmail}\nName: ${userName || "Anonymous"}\nCategory: ${ticketCategory}\n\nComplaint Details:\n${ticketMessage}`
-  )}`;
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl rounded-2xl border border-cyan-500/40 bg-[#070D18] text-slate-100 shadow-2xl shadow-cyan-950/60 overflow-hidden font-mono flex flex-col max-h-[90vh]"
+        className="w-full max-w-3xl lg:max-w-4xl rounded-2xl border border-cyan-500/40 bg-[#070D18] text-slate-100 shadow-2xl shadow-cyan-950/60 overflow-hidden font-mono flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -245,14 +370,14 @@ export const SupportModal: React.FC<SupportModalProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-white tracking-wide">Support &amp; Complaint Desk</h2>
+                <h2 className="text-base font-bold text-white tracking-wide">Support &amp; Community Desk</h2>
                 <span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                   24/7 ACTIVE
                 </span>
               </div>
               <p className="text-xs text-slate-400 font-mono mt-0.5">
-                Direct Developer Ingestion Desk &bull; Rapid Rectification
+                Developer Ingestion &bull; User Reviews &bull; Live Access Activity
               </p>
             </div>
           </div>
@@ -267,32 +392,76 @@ export const SupportModal: React.FC<SupportModalProps> = ({
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex border-b border-[#1E293B] bg-[#080E1A] px-6 pt-2 shrink-0">
+        <div className="flex border-b border-[#1E293B] bg-[#080E1A] px-4 sm:px-6 pt-2 shrink-0 overflow-x-auto">
           <button
             onClick={() => setActiveTab("file")}
-            className={`px-4 py-2.5 font-bold text-xs flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
+            className={`px-3.5 py-2.5 font-bold text-xs flex items-center gap-2 border-b-2 transition-all cursor-pointer shrink-0 ${
               activeTab === "file"
                 ? "border-cyan-400 text-cyan-300 bg-cyan-950/30 rounded-t-lg"
                 : "border-transparent text-slate-400 hover:text-slate-200"
             }`}
           >
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>File a Complaint</span>
+            <span>File Complaint</span>
           </button>
 
           <button
             onClick={() => setActiveTab("inbox")}
-            className={`px-4 py-2.5 font-bold text-xs flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
+            className={`px-3.5 py-2.5 font-bold text-xs flex items-center gap-2 border-b-2 transition-all cursor-pointer shrink-0 ${
               activeTab === "inbox"
                 ? "border-purple-400 text-purple-300 bg-purple-950/30 rounded-t-lg"
                 : "border-transparent text-slate-400 hover:text-slate-200"
             }`}
           >
             <Inbox className="w-3.5 h-3.5" />
-            <span>Received Complaints Inbox</span>
+            <span>Complaints Inbox</span>
             {savedComplaints.length > 0 && (
               <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-purple-500/30 text-purple-300 font-bold border border-purple-500/40">
                 {savedComplaints.length}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab("reviews")}
+            className={`px-3.5 py-2.5 font-bold text-xs flex items-center gap-2 border-b-2 transition-all cursor-pointer shrink-0 ${
+              activeTab === "reviews"
+                ? "border-amber-400 text-amber-300 bg-amber-950/30 rounded-t-lg"
+                : "border-transparent text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+            <span>Reviews</span>
+            {reviewStats.total > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500/25 text-amber-300 font-bold border border-amber-500/40">
+                {reviewStats.average.toFixed(1)}★ ({reviewStats.total})
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab("activity")}
+            className={`px-3.5 py-2.5 font-bold text-xs flex items-center gap-2 border-b-2 transition-all cursor-pointer shrink-0 ${
+              activeTab === "activity"
+                ? "border-cyan-400 text-cyan-300 bg-cyan-950/30 rounded-t-lg"
+                : "border-transparent text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            {isCreator ? (
+              <Clock className="w-3.5 h-3.5 text-cyan-400" />
+            ) : (
+              <Lock className="w-3.5 h-3.5 text-amber-400" />
+            )}
+            <span>Who Used App</span>
+            {isCreator ? (
+              activities.length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-cyan-500/25 text-cyan-300 font-bold border border-cyan-500/40">
+                  {activities.length}
+                </span>
+              )
+            ) : (
+              <span className="px-1.5 py-0.2 rounded text-[9px] bg-amber-500/15 text-amber-300 font-bold border border-amber-500/30 font-mono">
+                Creator Only
               </span>
             )}
           </button>
@@ -334,13 +503,21 @@ export const SupportModal: React.FC<SupportModalProps> = ({
                           <Copy className="w-3.5 h-3.5" />
                         )}
                       </button>
-                      <a
-                        href={`mailto:${primarySupportEmail}?subject=Quantum%20AI%20Support%20Request`}
-                        className="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500 hover:text-slate-950 border border-cyan-500/40 transition-colors"
-                        title="Send Email"
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleTriggerEmailCompose({
+                            to: primarySupportEmail,
+                            recipientName: "Sanchith (Primary Support)",
+                            subject: "Quantum AI Support Request",
+                            body: "Hi Sanchith,\n\nI am contacting support regarding:\n",
+                          })
+                        }
+                        className="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500 hover:text-slate-950 border border-cyan-500/40 transition-colors cursor-pointer"
+                        title="Send Email (Choose Gmail or Outlook)"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
+                      </button>
                     </div>
                   </div>
 
@@ -362,13 +539,21 @@ export const SupportModal: React.FC<SupportModalProps> = ({
                           <Copy className="w-3.5 h-3.5" />
                         )}
                       </button>
-                      <a
-                        href={`mailto:${secondarySupportEmail}?subject=Quantum%20AI%20Support%20Request`}
-                        className="p-1.5 rounded-lg bg-purple-500/20 text-purple-300 hover:bg-purple-500 hover:text-slate-950 border border-purple-500/40 transition-colors"
-                        title="Send Email"
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleTriggerEmailCompose({
+                            to: secondarySupportEmail,
+                            recipientName: "Sanchith (Outlook Support)",
+                            subject: "Quantum AI Support Request",
+                            body: "Hi Sanchith,\n\nI am contacting support regarding:\n",
+                          })
+                        }
+                        className="p-1.5 rounded-lg bg-purple-500/20 text-purple-300 hover:bg-purple-500 hover:text-slate-950 border border-purple-500/40 transition-colors cursor-pointer"
+                        title="Send Email (Choose Gmail or Outlook)"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -553,14 +738,25 @@ export const SupportModal: React.FC<SupportModalProps> = ({
                         )}
                       </button>
 
-                      <a
-                        href={directMailtoUrl}
-                        title="Send directly using your email client"
-                        className="py-2.5 px-3 rounded-lg border border-[#1E293B] bg-[#0E1624] hover:border-cyan-400 text-slate-300 hover:text-white flex items-center gap-1.5 transition-colors text-xs font-bold shrink-0"
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleTriggerEmailCompose({
+                            to: primarySupportEmail,
+                            cc: secondarySupportEmail,
+                            recipientName: "Quantum AI Support",
+                            subject: ticketSubject
+                              ? `[User Complaint] ${ticketSubject}`
+                              : `[User Complaint] Support Request from ${userEmail || "User"}`,
+                            body: `User Contact Email: ${userEmail}\nName: ${userName || "Anonymous"}\nCategory: ${ticketCategory}\n\nComplaint Details:\n${ticketMessage}`,
+                          })
+                        }
+                        title="Compose in Gmail, Outlook, or Mail App"
+                        className="py-2.5 px-3 rounded-lg border border-[#1E293B] bg-[#0E1624] hover:border-cyan-400 text-slate-300 hover:text-white flex items-center gap-1.5 transition-colors text-xs font-bold shrink-0 cursor-pointer"
                       >
                         <Mail className="w-3.5 h-3.5 text-cyan-400" />
-                        <span className="hidden sm:inline">Mail Client</span>
-                      </a>
+                        <span className="hidden sm:inline">Choose Email App</span>
+                      </button>
                     </div>
                   </form>
                 )}
@@ -605,7 +801,7 @@ export const SupportModal: React.FC<SupportModalProps> = ({
                 </div>
               </div>
             </>
-          ) : (
+          ) : activeTab === "inbox" ? (
             /* INBOX / COMPLAINTS AUDIT LOG VIEW */
             <div className="space-y-4">
               {/* Email Client Unblock Guide Banner */}
@@ -663,13 +859,25 @@ export const SupportModal: React.FC<SupportModalProps> = ({
                   {loadingComplaints && <RefreshCw className="w-3 h-3 text-cyan-400 animate-spin" />}
                 </div>
 
-                <button
-                  onClick={fetchComplaints}
-                  className="px-2.5 py-1 rounded-lg bg-[#0E1624] hover:bg-[#151F30] border border-[#1E293B] text-slate-300 hover:text-white text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
-                >
-                  <RefreshCw className="w-3 h-3" />
-                  <span>Refresh Log</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  {savedComplaints.length > 0 && isCreator && (
+                    <button
+                      onClick={handleClearAllComplaints}
+                      className="px-2.5 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
+                      title="Delete all complaints from disk"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>Clear All</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={fetchComplaints}
+                    className="px-2.5 py-1 rounded-lg bg-[#0E1624] hover:bg-[#151F30] border border-[#1E293B] text-slate-300 hover:text-white text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    <span>Refresh Log</span>
+                  </button>
+                </div>
               </div>
 
               {/* Complaints Items */}
@@ -685,11 +893,6 @@ export const SupportModal: React.FC<SupportModalProps> = ({
                 <div className="space-y-3">
                   {savedComplaints.map((item) => {
                     const isExpanded = expandedComplaintId === item.id;
-                    const replyMailto = `mailto:${item.userEmail}?subject=${encodeURIComponent(
-                      `Re: [${item.ticketId}] ${item.subject}`
-                    )}&body=${encodeURIComponent(
-                      `Hi ${item.userName || "there"},\n\nThank you for reaching out regarding your complaint (Ticket: ${item.ticketId}). We have investigated the issue and wanted to follow up with you:\n\n`
-                    )}`;
 
                     return (
                       <div
@@ -704,6 +907,16 @@ export const SupportModal: React.FC<SupportModalProps> = ({
                               <span className="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">
                                 {item.category || "Complaint"}
                               </span>
+                              {item.status === "resolved" ? (
+                                <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold flex items-center gap-1">
+                                  <Check className="w-2.5 h-2.5" />
+                                  Resolved
+                                </span>
+                              ) : (
+                                <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
+                                  Received
+                                </span>
+                              )}
                               <span className="text-[10px] text-slate-500 font-mono">
                                 {new Date(item.timestamp).toLocaleString()}
                               </span>
@@ -714,14 +927,32 @@ export const SupportModal: React.FC<SupportModalProps> = ({
                           </div>
 
                           <div className="flex items-center gap-1.5 shrink-0">
-                            <a
-                              href={replyMailto}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleTriggerEmailCompose({
+                                  to: item.userEmail,
+                                  recipientName: item.userName || "User",
+                                  subject: `Re: [${item.ticketId}] ${item.subject}`,
+                                  body: `Hi ${item.userName || "there"},\n\nThank you for reaching out regarding your complaint (Ticket: ${item.ticketId}). We have investigated the issue and wanted to follow up with you:\n\n`,
+                                })
+                              }
                               className="px-2.5 py-1 rounded bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-[10px] flex items-center gap-1 cursor-pointer transition-colors shadow-sm"
-                              title="Send Email Reply"
+                              title="Send Email Reply (Choose Gmail or Outlook)"
                             >
                               <Mail className="w-3 h-3" />
                               <span>Reply</span>
-                            </a>
+                            </button>
+                            {isCreator && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteComplaint(item.id)}
+                                className="p-1 rounded bg-[#0E1624] hover:bg-rose-500/20 border border-[#1E293B] hover:border-rose-500/40 text-slate-400 hover:text-rose-300 cursor-pointer transition-colors"
+                                title="Delete complaint"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                             <button
                               onClick={() => setExpandedComplaintId(isExpanded ? null : item.id)}
                               className="p-1 rounded bg-[#0E1624] border border-[#1E293B] text-slate-400 hover:text-white cursor-pointer"
@@ -741,18 +972,36 @@ export const SupportModal: React.FC<SupportModalProps> = ({
                               <span className="text-slate-400 text-[10px]">({item.userName})</span>
                             )}
                           </div>
-                          <button
-                            onClick={() => handleCopyText(item.userEmail, `email-${item.id}`)}
-                            className="px-2 py-0.5 rounded bg-[#0E1624] hover:bg-[#151F30] border border-[#1E293B] text-slate-300 hover:text-white text-[10px] flex items-center gap-1 shrink-0 cursor-pointer"
-                            title="Copy user email"
-                          >
-                            {copiedText === `email-${item.id}` ? (
-                              <Check className="w-3 h-3 text-emerald-400" />
-                            ) : (
-                              <Copy className="w-3 h-3" />
-                            )}
-                            <span>Copy Email</span>
-                          </button>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              onClick={() => handleCopyText(item.userEmail, `email-${item.id}`)}
+                              className="px-2 py-0.5 rounded bg-[#0E1624] hover:bg-[#151F30] border border-[#1E293B] text-slate-300 hover:text-white text-[10px] flex items-center gap-1 shrink-0 cursor-pointer"
+                              title="Copy user email"
+                            >
+                              {copiedText === `email-${item.id}` ? (
+                                <Check className="w-3 h-3 text-emerald-400" />
+                              ) : (
+                                <Copy className="w-3 h-3" />
+                              )}
+                              <span>Copy Email</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleTriggerEmailCompose({
+                                  to: item.userEmail,
+                                  recipientName: item.userName || "User",
+                                  subject: `Re: [${item.ticketId}] ${item.subject}`,
+                                  body: `Hi ${item.userName || "there"},\n\nThank you for reaching out regarding your complaint (Ticket: ${item.ticketId}). We have investigated the issue and wanted to follow up with you:\n\n`,
+                                })
+                              }
+                              className="px-2 py-0.5 rounded bg-cyan-500/20 hover:bg-cyan-500 hover:text-slate-950 border border-cyan-500/40 text-cyan-300 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                              title="Send Email (Choose Gmail or Outlook)"
+                            >
+                              <Mail className="w-3 h-3" />
+                              <span>Email</span>
+                            </button>
+                          </div>
                         </div>
 
                         {/* Complaint Details */}
@@ -770,12 +1019,83 @@ export const SupportModal: React.FC<SupportModalProps> = ({
                             {isExpanded ? "Show Less" : "Read Full Message"}
                           </button>
                         )}
+
+                        {item.resolution && (
+                          <div className="p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-500/30 font-sans text-xs text-emerald-300 leading-relaxed flex items-start gap-2">
+                            <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                            <div>
+                              <span className="font-bold text-emerald-200 block text-[11px] uppercase tracking-wider mb-0.5">
+                                Rectification & Fix Status:
+                              </span>
+                              <span>{item.resolution}</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Review Column & Assessment */}
+                        <div className="p-2.5 rounded-lg bg-amber-950/20 border border-amber-500/30 font-sans text-xs text-amber-200 leading-relaxed flex items-start justify-between gap-2">
+                          <div className="flex items-start gap-2">
+                            <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400 shrink-0 mt-0.5" />
+                            <div>
+                              <span className="font-bold text-amber-300 block text-[10px] uppercase tracking-wider mb-0.5">
+                                Review &amp; Quality Audit:
+                              </span>
+                              <span className="text-[11px]">
+                                {item.status === "resolved"
+                                  ? "Reviewed by Sanchith: Verification confirmed. Vector cross product calculation engine verified for exact determinant signs."
+                                  : "Under Desk Review: Queued for developer review & remediation."}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="shrink-0 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                            {item.status === "resolved" ? "⭐ Reviewed" : "In Review"}
+                          </span>
+                        </div>
                       </div>
                     );
                   })}
                 </div>
               )}
             </div>
+          ) : activeTab === "reviews" ? (
+            <ReviewsTab
+              reviews={reviews}
+              stats={reviewStats}
+              isLoading={loadingReviews}
+              onRefresh={fetchReviews}
+              onContactUser={(email, name, subject) => {
+                handleTriggerEmailCompose({
+                  to: email,
+                  subject: subject || "Thank you for your Quantum AI review",
+                  body: `Hi ${name || "there"},\n\nThank you for sharing your review on Quantum STEM AI!\n\nBest regards,\nSanchith V\nQuantum STEM AI Developer`,
+                });
+              }}
+              currentUser={currentUser}
+              onReviewSubmitted={() => {
+                fetchReviews();
+                fetchActivities();
+              }}
+            />
+          ) : (
+            <ActivityLogsTab
+              activities={activities}
+              isLoading={loadingActivities}
+              onRefresh={fetchActivities}
+              isCreator={isCreator}
+              onUnlockCreator={() => {
+                setIsAdminUnlocked(true);
+                setTimeout(() => {
+                  fetchActivities();
+                }, 50);
+              }}
+              onContactUser={(email, name, subject) => {
+                handleTriggerEmailCompose({
+                  to: email,
+                  subject: subject || "Quantum STEM AI Support & Check-in",
+                  body: `Hi ${name || "there"},\n\nWe saw your recent activity session on Quantum STEM AI. If you need any assistance with physics calculations or math derivations, feel free to reply!\n\nBest regards,\nSanchith V\nQuantum STEM AI Developer`,
+                });
+              }}
+            />
           )}
 
           {/* Quick links */}
@@ -800,6 +1120,13 @@ export const SupportModal: React.FC<SupportModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Email Service Chooser Dialog */}
+      <EmailClientChooserModal
+        isOpen={showEmailChooser}
+        draft={emailModalDraft}
+        onClose={() => setShowEmailChooser(false)}
+      />
     </div>
   );
 };

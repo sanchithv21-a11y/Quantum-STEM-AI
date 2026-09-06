@@ -406,6 +406,13 @@ export const ChatHUD: React.FC<ChatHUDProps> = ({
                   </div>
                 </div>
               )}
+
+              {/* Quality & verification disclaimer at end of assistant response */}
+              {msg.role === "assistant" && (
+                <div className="mt-3 pt-2 border-t border-[#1E293B]/70 flex items-center justify-between text-[10px] text-slate-400/90 font-sans tracking-tight select-none">
+                  <span>Quantum can make mistakes. Pls double check your response</span>
+                </div>
+              )}
             </div>
 
             {msg.role === "user" && (
@@ -656,6 +663,10 @@ export const ChatHUD: React.FC<ChatHUDProps> = ({
         <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono px-1">
           <span>Press Enter to transmit • Shift+Enter for new line</span>
           <span>LaTeX &amp; KaTeX enabled</span>
+        </div>
+
+        <div className="text-center pt-1 border-t border-[#1E293B]/40 text-[11px] text-slate-400 font-sans tracking-tight select-none">
+          Quantum can make mistakes. Pls double check your response
         </div>
       </form>
     </div>

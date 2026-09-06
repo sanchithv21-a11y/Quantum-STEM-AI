@@ -187,3 +187,31 @@ export interface AuthUser {
   tier: SubscriptionTier;
   quantumId: string;
 }
+
+export interface UserReview {
+  id: string;
+  userName: string;
+  userEmail: string;
+  rating: number; // 1 to 5
+  title: string;
+  comment: string;
+  category: string;
+  timestamp: string;
+  verified: boolean;
+  status: "approved" | "pending";
+}
+
+export interface UserActivityLog {
+  id: string;
+  userName: string;
+  userEmail: string;
+  quantumId?: string;
+  role?: string;
+  action: string;
+  category: "auth" | "stem" | "support" | "review" | "navigation" | "system" | string;
+  details?: string;
+  timestamp: string;
+  userAgent?: string;
+  ip?: string;
+}
+

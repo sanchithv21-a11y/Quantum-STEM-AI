@@ -1105,6 +1105,22 @@ const SCIENCE_TOPICS: ScienceTopic[] = [
     keywords: ["matrices", "matrix", "linear algebra", "determinant", "eigenvalues", "eigenvectors", "inverse", "vector", "transformations"]
   },
   {
+    id: "vectors-cross-product-dot-product",
+    category: "math",
+    categoryLabel: "Mathematics (Class 11-12 & Physics)",
+    categoryIcon: Calculator,
+    title: "Vectors: Cross Product (î × ĵ = +k̂), Dot Product & Right-Hand Rule",
+    simpleExplanation: "Vectors possess both magnitude and direction. The Dot Product (a · b = |a||b|cos θ) produces a scalar measuring directional alignment. The Cross Product (a × b = |a||b|sin θ n̂) produces a vector perpendicular to both vectors obeying the Right-Hand Rule (î × ĵ = +k̂).",
+    coreFormulaOrConcept: "Cross Product: î × ĵ = +k̂, ĵ × k̂ = +î, k̂ × î = +ĵ  |  Anti-commutative: a × b = -(b × a)  |  Dot Product: a · b = a_x b_x + a_y b_y + a_z b_z",
+    everydayExample: "Tightening a bolt with a wrench uses the cross product: Torque τ = r × F. Pushing the wrench in the xy-plane produces torque pointing along +z (+k̂), turning the screw.",
+    quickQuestions: [
+      "Derive step-by-step why the cross product of i and j gives +k instead of -k",
+      "Explain the 3×3 determinant formula for cross product of two 3D vectors",
+      "What is the difference between dot product and cross product with physical examples?"
+    ],
+    keywords: ["vector", "cross product", "dot product", "right hand rule", "i cross j", "torque", "scalar product", "unit vectors", "determinant"]
+  },
+  {
     id: "logarithms-exponential-growth",
     category: "math",
     categoryLabel: "Mathematics (Class 9-12)",

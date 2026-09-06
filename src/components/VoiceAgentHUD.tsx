@@ -309,6 +309,11 @@ export const VoiceAgentHUD: React.FC<VoiceAgentHUDProps> = ({
           </button>
         ))}
       </div>
+
+      {/* Quality & verification note */}
+      <div className="text-center pt-1 border-t border-[#2D3748]/40 text-[10px] text-slate-400 font-sans tracking-tight select-none">
+        Quantum can make mistakes. Pls double check your response
+      </div>
     </div>
   );
 };

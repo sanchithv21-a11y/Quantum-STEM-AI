@@ -256,6 +256,66 @@ Result: $\\int x e^x dx = x e^x - \\int e^x dx = x e^x - e^x + C = e^x(x-1) + C$
     };
   }
 
+  // Vector Algebra: Cross Product & Dot Product (Class 11 & 12 Mathematics & Physics)
+  if (
+    q.includes("cross product") ||
+    q.includes("vector product") ||
+    q.includes("i x j") ||
+    q.includes("i × j") ||
+    q.includes("i cross j") ||
+    q.includes("cross product of i and j") ||
+    (q.includes("vector") && (q.includes("cross") || q.includes("determinant") || q.includes("right hand rule")))
+  ) {
+    return {
+      title: "Vector Cross Product: $\\mathbf{\\hat{i}} \\times \\mathbf{\\hat{j}} = +\\mathbf{\\hat{k}}$ & Determinant Derivation",
+      directAnswer: `**The cross product of unit vectors $\\mathbf{\\hat{i}}$ and $\\mathbf{\\hat{j}}$ is strictly equal to positive $\\mathbf{\\hat{k}}$ ($+\\mathbf{\\hat{k}}$), not $-\\mathbf{\\hat{k}}$:**
+$$\\mathbf{\\hat{i}} \\times \\mathbf{\\hat{j}} = +\\mathbf{\\hat{k}}$$
+In accordance with the standard Right-Hand Rule and determinant cofactor expansion, the cross product of two orthogonal unit vectors in the $xy$-plane points directly along the positive $z$-axis ($+\\mathbf{\\hat{k}}$).`,
+      principles: `- **Definition of Cross Product**: For vectors $\\mathbf{a}$ and $\\mathbf{b}$ separated by angle $\\theta$:
+  $$\\mathbf{a} \\times \\mathbf{b} = \\|\\mathbf{a}\\| \\|\\mathbf{b}\\| \\sin\\theta \\ \\mathbf{\\hat{n}}$$
+  where $\\mathbf{\\hat{n}}$ is the unit normal vector given by the **Right-Hand Rule**.
+- **Determinant Formula (3D Cartesian Coordinates)**:
+  $$\\mathbf{a} \\times \\mathbf{b} = \\begin{vmatrix} \\mathbf{\\hat{i}} & \\mathbf{\\hat{j}} & \\mathbf{\\hat{k}} \\\\ a_x & a_y & a_z \\\\ b_x & b_y & b_z \\end{vmatrix}$$
+- **Cyclic Permutation Rules (Positive $+1$)**:
+  $$\\mathbf{\\hat{i}} \\times \\mathbf{\\hat{j}} = +\\mathbf{\\hat{k}}, \\qquad \\mathbf{\\hat{j}} \\times \\mathbf{\\hat{k}} = +\\mathbf{\\hat{i}}, \\qquad \\mathbf{\\hat{k}} \\times \\mathbf{\\hat{i}} = +\\mathbf{\\hat{j}}$$
+- **Anti-Commutative Property (Reversal yields negative sign $-1$)**:
+  $$\\mathbf{a} \\times \\mathbf{b} = -(\\mathbf{b} \\times \\mathbf{a}) \\implies \\mathbf{\\hat{j}} \\times \\mathbf{\\hat{i}} = -\\mathbf{\\hat{k}}, \\quad \\mathbf{\\hat{k}} \\times \\mathbf{\\hat{j}} = -\\mathbf{\\hat{i}}, \\quad \\mathbf{\\hat{i}} \\times \\mathbf{\\hat{k}} = -\\mathbf{\\hat{j}}$$
+- **Self Cross Product**:
+  $$\\mathbf{\\hat{i}} \\times \\mathbf{\\hat{i}} = \\mathbf{\\hat{j}} \\times \\mathbf{\\hat{j}} = \\mathbf{\\hat{k}} \\times \\mathbf{\\hat{k}} = \\mathbf{0}$$`,
+      derivationOrSteps: `#### Step-by-Step Derivation via 3×3 Matrix Determinant Expansion:
+
+1. **Express standard unit basis vectors in coordinate form**:
+   $$\\mathbf{\\hat{i}} = \\begin{pmatrix} 1 \\\\ 0 \\\\ 0 \\end{pmatrix}, \\qquad \\mathbf{\\hat{j}} = \\begin{pmatrix} 0 \\\\ 1 \\\\ 0 \\end{pmatrix}$$
+
+2. **Construct the 3×3 determinant matrix**:
+   $$\\mathbf{\\hat{i}} \\times \\mathbf{\\hat{j}} = \\begin{vmatrix} \\mathbf{\\hat{i}} & \\mathbf{\\hat{j}} & \\mathbf{\\hat{k}} \\\\ 1 & 0 & 0 \\\\ 0 & 1 & 0 \\end{vmatrix}$$
+
+3. **Expand across the first row by cofactors with signs $(+1, -1, +1)$**:
+   $$\\mathbf{\\hat{i}} \\times \\mathbf{\\hat{j}} = \\mathbf{\\hat{i}}\\begin{vmatrix} 0 & 0 \\\\ 1 & 0 \\end{vmatrix} - \\mathbf{\\hat{j}}\\begin{vmatrix} 1 & 0 \\\\ 0 & 0 \\end{vmatrix} + \\mathbf{\\hat{k}}\\begin{vmatrix} 1 & 0 \\\\ 0 & 1 \\end{vmatrix}$$
+   Now evaluate each $2 \\times 2$ minor determinant:
+   - For $\\mathbf{\\hat{i}}$: $(0 \\cdot 0 - 0 \\cdot 1) = 0$
+   - For $\\mathbf{\\hat{j}}$: $-(1 \\cdot 0 - 0 \\cdot 0) = -0 = 0$
+   - For $\\mathbf{\\hat{k}}$: $+((1)(1) - (0)(0)) = +(1 - 0) = \\mathbf{+1}$
+
+   $$\\mathbf{\\hat{i}} \\times \\mathbf{\\hat{j}} = 0\\mathbf{\\hat{i}} - 0\\mathbf{\\hat{j}} + 1\\mathbf{\\hat{k}} = +\\mathbf{\\hat{k}}$$
+   *(Notice: Step 3 evaluates strictly to $+1\\mathbf{\\hat{k}}$, with a positive sign, because the cofactor sign for column 3 is $(-1)^{1+3} = +1$ and the product of the main diagonal $(1 \\times 1)$ is $+1$)*.
+
+4. **Right-Hand Rule Physical Verification**:
+   - Point index finger along $\\mathbf{\\hat{i}}$ ($+x$-axis).
+   - Curl middle finger towards $\\mathbf{\\hat{j}}$ ($+y$-axis).
+   - Thumb points perpendicular and outward along the positive $+z$-axis ($+\\mathbf{\\hat{k}}$).
+   - Therefore:
+     $$\\mathbf{\\hat{i}} \\times \\mathbf{\\hat{j}} = +\\mathbf{\\hat{k}} \\quad \\blacksquare$$`,
+      intuitionAndExamples: `Physical Example (Torque & Angular Momentum): In rotational mechanics, torque is $\\boldsymbol{\\tau} = \\mathbf{r} \\times \\mathbf{F}$. If a wrench lies along the $+x$-axis ($\mathbf{r} = r\\mathbf{\\hat{i}}$) and you apply an upward force along $+y$ ($\mathbf{F} = F\\mathbf{\\hat{j}}$), the resulting torque vector points directly outward along the $+z$-axis ($\boldsymbol{\\tau} = rF\\mathbf{\\hat{k}}$), causing counterclockwise rotation according to the Right-Hand Rule.`,
+      takeaways: [
+        `î × ĵ = +k̂ (positive k̂)`,
+        `Anti-commutative: ĵ × î = -k̂`,
+        `Right-hand rule: î (thumb/index) to ĵ (fingers) points thumb to +k̂`,
+        `Cross product of parallel vectors is zero: î × î = 0`
+      ]
+    };
+  }
+
   // -------------------------------------------------------------
   // 2. PHYSICS & NATURAL PHENOMENA (Class 1 to 12)
   // -------------------------------------------------------------

@@ -67,6 +67,33 @@ export function getSavedComplaints(): any[] {
   return [];
 }
 
+export function deleteComplaint(idOrTicketId: string): boolean {
+  try {
+    ensureDataDirectory();
+    if (fs.existsSync(COMPLAINTS_FILE)) {
+      const raw = fs.readFileSync(COMPLAINTS_FILE, "utf-8");
+      const list: any[] = JSON.parse(raw || "[]");
+      const filtered = list.filter(
+        (c) => c.id !== idOrTicketId && c.ticketId !== idOrTicketId
+      );
+      fs.writeFileSync(COMPLAINTS_FILE, JSON.stringify(filtered, null, 2), "utf-8");
+      return filtered.length !== list.length;
+    }
+  } catch (err) {
+    console.error("Error deleting complaint:", err);
+  }
+  return false;
+}
+
+export function clearAllComplaints(): void {
+  try {
+    ensureDataDirectory();
+    fs.writeFileSync(COMPLAINTS_FILE, JSON.stringify([], null, 2), "utf-8");
+  } catch (err) {
+    console.error("Error clearing complaints:", err);
+  }
+}
+
 /**
  * Dispatches complaint to sanchithv21@gmail.com & sanchithvinod21@outlook.com
  */

@@ -138,6 +138,21 @@ export default function App() {
         setShowAppTour(true);
       }
     } catch {}
+
+    // Record login activity in user access audit log
+    fetch("/api/activity/log", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userName: user.name,
+        userEmail: user.email,
+        quantumId: user.quantumId,
+        role: /sanchith/i.test(user.name) || /sanchith/i.test(user.email) ? "Admin & Creator" : "Verified User",
+        action: `Signed In (${user.provider.toUpperCase()})`,
+        category: "auth",
+        details: `Authenticated into Quantum STEM AI on ${new Date().toLocaleTimeString()}`,
+      }),
+    }).catch(() => {});
   };
 
   const handleLogout = () => {
@@ -1828,6 +1843,10 @@ How may I assist your research objectives today, sir? You may speak naturally vi
             </span>
           </div>
 
+          <div className="text-center text-[10px] text-slate-400/90 font-sans">
+            Quantum can make mistakes. Pls double check your response
+          </div>
+
           <div className="flex items-center space-x-6 text-white/40">
             <span>MIC: {voiceState.isListening ? "ACTIVE" : "STANDBY"}</span>
             <span>SPEECH: {voiceConfig.autoSpeakResponse ? "ENABLED" : "MUTED"}</span>
@@ -1968,6 +1987,7 @@ How may I assist your research objectives today, sir? You may speak naturally vi
         isOpen={showSupportModal}
         onClose={() => setShowSupportModal(false)}
         onOpenHelpManual={() => setShowManualModal(true)}
+        currentUser={currentUser}
       />
 
       {/* Sovereign Authentication Modal: Apple, Google, GitHub, Microsoft, and Email login */}

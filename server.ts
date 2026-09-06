@@ -4,7 +4,9 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import { querySchoolSTEMDatabase } from "./server/schoolKnowledge";
-import { dispatchComplaintEmail, getSavedComplaints } from "./server/supportMailer";
+import { dispatchComplaintEmail, getSavedComplaints, deleteComplaint, clearAllComplaints } from "./server/supportMailer";
+import { getUserActivities, saveUserActivity } from "./server/activityTracker";
+import { getReviews, saveReview, getReviewStats } from "./server/reviewsManager";
 
 dotenv.config();
 
@@ -1033,7 +1035,7 @@ CORE CAPABILITIES & SUBJECT COVERAGE (Class 1st to 12th):
 CRITICAL INSTRUCTIONS:
 1. ADDRESS THE USER AS "SIR": Always address the user politely and respectfully as "sir" (e.g. "Here is the complete solution, sir:", "Yes, sir", "Right away, sir").
 2. CLEAR & DIRECT ANSWER FIRST: State the direct, accurate summary or answer in the very first sentence under "### Direct Answer:".
-3. COMPLETE STEP-BY-STEP DERIVATIONS FOR EQUATIONS: When asked to derive or explain any mathematical or physical formula, ALWAYS provide the step-by-step mathematical derivation with clear LaTeX equations ($inline$ and $$block$$), showing all algebraic substitutions and reasoning.
+3. COMPLETE STEP-BY-STEP DERIVATIONS FOR EQUATIONS: When asked to derive or explain any mathematical or physical formula, ALWAYS provide the step-by-step mathematical derivation with clear LaTeX equations ($inline$ and $$block$$), showing all algebraic substitutions and reasoning. For vector cross products, strictly follow the Right-Hand Rule: $\mathbf{\hat{i}} \times \mathbf{\hat{j}} = +\mathbf{\hat{k}}$ (positive $\mathbf{\hat{k}}$, never $-\mathbf{\hat{k}}$ in Step 3), $\mathbf{\hat{j}} \times \mathbf{\hat{k}} = +\mathbf{\hat{i}}$, $\mathbf{\hat{k}} \times \mathbf{\hat{i}} = +\mathbf{\hat{j}}$, and anti-commutative property $\mathbf{\hat{j}} \times \mathbf{\hat{i}} = -\mathbf{\hat{k}}$.
 4. INTUITIVE STEP-BY-STEP EXPLANATION: Under "#### How It Works & Core Principles", provide an easy-to-follow, structured explanation with relatable analogies and clear formulas.
 5. PRACTICAL EXAMPLES: Under "#### Real-World Analogy & Everyday Examples", give a memorable practical illustration.
 6. NO FLUFF: Be concise, clear, and high-impact without generic filler.
@@ -1105,8 +1107,9 @@ CRITICAL INSTRUCTIONS:
    - If asked "derive kinetic energy": State immediately that $E_k = \\frac{1}{2}mv^2$, derived from the work-energy theorem.
    - If asked "what is pi": State immediately that it is an irrational and transcendental number and state its exact approximate value ($\\pi \\approx 3.141592653589793...$) and definition ($\\pi = C/d$).
 3. RIGOROUS STEP-BY-STEP DERIVATIONS FOR ALL EQUATIONS (MANDATORY):
-   - Whenever the user asks a question about an equation, formula, mathematical problem, or derivation (whether simple or advanced—such as kinematics $v = u + at$ and $s = ut + \\frac{1}{2}at^2$, kinetic energy $E_k = \\frac{1}{2}mv^2$, solving linear equations $2x+5=15$, quadratic formula $ax^2+bx+c=0$, potential energy $U=mgh$, Pythagoras theorem $a^2+b^2=c^2$, projectile flight $T = \\frac{2u\\sin\\theta}{g}$, Snell's law $n_1 \\sin\\theta_1 = n_2 \\sin\\theta_2$, Newton's second law $F=ma$, Ohm's law and electrical power $P=VI=I^2R$, simple pendulum $T = 2\\pi\\sqrt{L/g}$, wave equation $v=f\\lambda$, fluid pressure $P=\\rho gh$, centripetal acceleration $a_c=v^2/r$, lens maker formula, or calculus/geometry proofs):
+   - Whenever the user asks a question about an equation, formula, mathematical problem, or derivation (whether simple or advanced—such as kinematics $v = u + at$ and $s = ut + \\frac{1}{2}at^2$, kinetic energy $E_k = \\frac{1}{2}mv^2$, solving linear equations $2x+5=15$, quadratic formula $ax^2+bx+c=0$, potential energy $U=mgh$, Pythagoras theorem $a^2+b^2=c^2$, projectile flight $T = \\frac{2u\\sin\\theta}{g}$, Snell's law $n_1 \\sin\\theta_1 = n_2 \\sin\\theta_2$, Newton's second law $F=ma$, Ohm's law and electrical power $P=VI=I^2R$, simple pendulum $T = 2\\pi\\sqrt{L/g}$, wave equation $v=f\\lambda$, fluid pressure $P=\\rho gh$, centripetal acceleration $a_c=v^2/r$, lens maker formula, vector cross products, or calculus/geometry proofs):
      - Under "#### Step-by-Step Mathematical Derivation", ALWAYS provide the complete step-by-step mathematical derivation showing how one line progresses to the next.
+     - For vector cross products: strictly obey the Right-Hand Rule and determinant cofactor signs where $\\mathbf{\\hat{i}} \\times \\mathbf{\\hat{j}} = +\\mathbf{\\hat{k}}$ (strictly positive $\\mathbf{\\hat{k}}$, never $-\\mathbf{\\hat{k}}$ in Step 3), $\\mathbf{\\hat{j}} \\times \\mathbf{\\hat{k}} = +\\mathbf{\\hat{i}}$, $\\mathbf{\\hat{k}} \\times \\mathbf{\\hat{i}} = +\\mathbf{\\hat{j}}$, and anti-commutativity $\\mathbf{\\hat{j}} \\times \\mathbf{\\hat{i}} = -\\mathbf{\\hat{k}}$.
      - State the initial principles, show all intermediate substitutions, algebraic simplifications, integrals, or derivatives using clear LaTeX formulas ($inline$ and $$block$$).
      - Ensure the steps are easy to follow and logically sound without skipping intermediate lines.
 4. ACCESSIBLE EXPLANATIONS FOR SIMPLE CONCEPTS:
@@ -1516,6 +1519,143 @@ app.get("/api/support/complaints", (req, res) => {
     const complaints = getSavedComplaints();
     return res.json({ success: true, count: complaints.length, complaints });
   } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Delete a specific complaint by id/ticketId
+app.delete("/api/support/complaints/:id", (req, res) => {
+  try {
+    const { id } = req.params;
+    const removed = deleteComplaint(id);
+    return res.json({ success: true, removed });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Clear all complaints
+app.delete("/api/support/complaints", (req, res) => {
+  try {
+    clearAllComplaints();
+    return res.json({ success: true, message: "All complaints cleared." });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// User Activity & Access Audit Log: See who used the app and at which time
+// Strictly restricted to Creator/Owner Sanchith (sanchithv21@gmail.com / sanchithvinod21@outlook.com)
+app.get("/api/activity/logs", (req, res) => {
+  try {
+    const adminEmail = String(req.headers["x-admin-email"] || req.query.adminEmail || "");
+    const adminKey = String(req.headers["x-admin-key"] || req.query.adminKey || "");
+    const isAuthorized =
+      /sanchith/i.test(adminEmail) ||
+      adminKey === "sanchith21" ||
+      req.query.unlock === "sanchith21" ||
+      req.query.adminEmail === "sanchithv21@gmail.com";
+
+    if (!isAuthorized) {
+      return res.status(403).json({
+        success: false,
+        error: "Access restricted. Only Sanchith (sanchithv21@gmail.com) can view user activity audit logs.",
+        restricted: true,
+      });
+    }
+
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 100;
+    const logs = getUserActivities(limit);
+    return res.json({ success: true, count: logs.length, logs });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post("/api/activity/log", (req, res) => {
+  try {
+    const { userName, userEmail, quantumId, role, action, category, details } = req.body || {};
+    const userAgent = req.headers["user-agent"] || "Web Client";
+    const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress || "127.0.0.1";
+
+    const entry = saveUserActivity({
+      userName: userName || "Anonymous User",
+      userEmail: userEmail || "anonymous@quantum.app",
+      quantumId: quantumId || "QUANTUM-USER",
+      role: role || "User",
+      action: action || "App Session Active",
+      category: category || "system",
+      details: details || "",
+      userAgent: typeof userAgent === "string" ? userAgent : userAgent[0],
+      ip: typeof ip === "string" ? ip : ip[0],
+    });
+
+    return res.json({ success: true, entry });
+  } catch (err: any) {
+    console.error("Failed to log activity:", err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Reviews API: Dedicated Reviews endpoint and statistics
+app.get("/api/reviews", (req, res) => {
+  try {
+    const reviews = getReviews();
+    const stats = getReviewStats();
+    return res.json({ success: true, reviews, stats });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post("/api/reviews", (req, res) => {
+  try {
+    const { userName, userEmail, rating, title, comment, category } = req.body || {};
+
+    if (!userEmail || !userEmail.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: "Please provide your email address to submit a review.",
+      });
+    }
+
+    if (!comment || !comment.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: "Please provide your review thoughts or feedback.",
+      });
+    }
+
+    const review = saveReview({
+      userName: (userName || "").trim() || "Quantum User",
+      userEmail: userEmail.trim(),
+      rating: Number(rating) || 5,
+      title: (title || "User Review").trim(),
+      comment: comment.trim(),
+      category: (category || "General App Experience").trim(),
+    });
+
+    // Also record in activity log so creator sees who reviewed and when!
+    try {
+      saveUserActivity({
+        userName: review.userName,
+        userEmail: review.userEmail,
+        quantumId: "QUANTUM-REVIEWER",
+        role: "Reviewer",
+        action: `Submitted ${review.rating}-Star Review: "${review.title}"`,
+        category: "review",
+        details: review.comment,
+        userAgent: (req.headers["user-agent"] as string) || "Web Client",
+        ip: (req.headers["x-forwarded-for"] as string) || req.socket.remoteAddress || "127.0.0.1",
+      });
+    } catch (e) {
+      // Non-blocking
+    }
+
+    const stats = getReviewStats();
+    return res.json({ success: true, review, stats, message: "Thank you for submitting your review!" });
+  } catch (err: any) {
+    console.error("Failed to submit review:", err);
     return res.status(500).json({ success: false, error: err.message });
   }
 });
