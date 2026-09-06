@@ -24,6 +24,7 @@ import { SupportModal } from "./components/SupportModal";
 import { HeaderProfileVoice } from "./components/HeaderProfileVoice";
 import { PowerSavingModal } from "./components/PowerSavingModal";
 import { PowerSavingModeSection } from "./components/PowerSavingModeSection";
+import { UndergoingProjectsSection } from "./components/UndergoingProjectsSection";
 import { BrandLogo } from "./components/BrandLogo";
 import { QuantumVoiceEngine } from "./utils/audioVoice";
 import { playQuantumClick } from "./utils/soundEffects";
@@ -69,6 +70,8 @@ import {
   LogOut,
   SunDim,
   BatteryCharging,
+  Mail,
+  Megaphone,
 } from "lucide-react";
 
 export default function App() {
@@ -185,7 +188,7 @@ export default function App() {
 
   // Active view layout mode
   const [activeView, setActiveView] = useState<
-    "dashboard" | "basic" | "stem" | "calculator" | "desktop" | "models" | "codingz" | "history" | "login" | "powersaving"
+    "dashboard" | "basic" | "stem" | "calculator" | "desktop" | "models" | "codingz" | "history" | "login" | "powersaving" | "projects"
   >("dashboard");
   const [activeDomain, setActiveDomain] = useState<STEMDomain>("quantum");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -558,6 +561,67 @@ How may I assist your research objectives today, sir? You may speak naturally vi
             : undefined,
         }}
       >
+        {/* Top Marquee Announcement Bar */}
+        <div
+          id="top-marquee-banner"
+          className="relative z-50 overflow-hidden border-b transition-colors duration-500 py-1.5 px-2 select-none shadow-md backdrop-blur-md"
+          style={{
+            backgroundColor: `${currentTheme.panelBg}F2`,
+            borderColor: `${currentTheme.primary}44`,
+          }}
+        >
+          <div className="flex items-center">
+            {/* Live Indicator Chip */}
+            <div
+              className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider shrink-0 z-10 shadow-sm mr-3 border"
+              style={{
+                backgroundColor: `${currentTheme.primary}20`,
+                borderColor: `${currentTheme.primary}60`,
+                color: currentTheme.primary,
+              }}
+            >
+              <span className="w-2 h-2 rounded-full animate-ping" style={{ backgroundColor: currentTheme.primary }} />
+              <Megaphone className="w-3 h-3" />
+              <span>NOTICE</span>
+            </div>
+
+            {/* Quick Interactive Support Link Shortcut */}
+            <button
+              onClick={() => {
+                playQuantumClick();
+                setShowSupportModal(true);
+              }}
+              className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold text-cyan-300 hover:text-white bg-cyan-950/60 hover:bg-cyan-900/80 border border-cyan-500/40 hover:border-cyan-400 transition-all cursor-pointer shrink-0 z-10 shadow-sm mr-3"
+              title="Open Support Modal & Mail Developer"
+            >
+              <Mail className="w-3 h-3 text-cyan-400" />
+              <span>Open Support</span>
+            </button>
+
+            {/* Scrolling Marquee Track (Repeated for continuous seamless loop) */}
+            <div className="overflow-hidden whitespace-nowrap flex-1 relative mask-gradient">
+              <div className="animate-marquee font-mono text-[11px] sm:text-xs text-slate-300 font-medium tracking-wide flex items-center">
+                <span className="inline-flex items-center gap-2 pr-12">
+                  <span>
+                    Hi all, thank you for using my app, since this app is still in progress, u may find some bugs. If you have any queries, just click the support button and mail me. I will reply it for you ASAP:). And one more thing. If u find the upgrade option still in the app, just click the upgrade option and click the pro or max option, no money will be charged. Sorry for the inconvinence
+                  </span>
+                  <span className="text-cyan-400 font-bold">•</span>
+                  <span className="text-emerald-400 font-bold">100% Free Access</span>
+                  <span className="text-cyan-400 font-bold">•</span>
+                </span>
+                <span className="inline-flex items-center gap-2 pr-12">
+                  <span>
+                    Hi all, thank you for using my app, since this app is still in progress, u may find some bugs. If you have any queries, just click the support button and mail me. I will reply it for you ASAP:). And one more thing. If u find the upgrade option still in the app, just click the upgrade option and click the pro or max option, no money will be charged. Sorry for the inconvinence
+                  </span>
+                  <span className="text-cyan-400 font-bold">•</span>
+                  <span className="text-emerald-400 font-bold">100% Free Access</span>
+                  <span className="text-cyan-400 font-bold">•</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Top Sleek Navigation Header */}
         <header
         className="sticky top-0 z-50 backdrop-blur-md border-b px-4 sm:px-6 py-2 shadow-lg transition-colors duration-500"
@@ -818,6 +882,27 @@ How may I assist your research objectives today, sir? You may speak naturally vi
                         )}
                       </button>
 
+                      {/* Undergoing Projects Option (SYNTRA, Carx, CYNOVA) */}
+                      <button
+                        onClick={() => {
+                          setActiveView("projects");
+                          setShowWorkspaceDropdown(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all cursor-pointer text-left ${
+                          activeView === "projects"
+                            ? "bg-purple-500/20 text-purple-300 font-bold border border-purple-500/40"
+                            : "text-slate-300 hover:bg-slate-800/80 hover:text-white"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Layers className="w-3.5 h-3.5 text-purple-400" />
+                          <span>Undergoing Projects (3)</span>
+                        </div>
+                        {activeView === "projects" && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_8px_#A855F7]" />
+                        )}
+                      </button>
+
                       {/* Sovereign Auth & Identity Option */}
                       <button
                         onClick={() => {
@@ -992,6 +1077,36 @@ How may I assist your research objectives today, sir? You may speak naturally vi
                   className="text-[9px] px-1.5 py-0.2 rounded font-mono font-bold border bg-cyan-500/20 border-cyan-500/40 text-cyan-300"
                 >
                   {messages.length}
+                </span>
+              </button>
+
+              {/* Dedicated Undergoing Projects Tab */}
+              <button
+                id="nav-undergoing-projects-tab-btn"
+                onClick={() => {
+                  playQuantumClick();
+                  setActiveView("projects");
+                }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-all cursor-pointer ${
+                  activeView === "projects"
+                    ? "border font-medium shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+                style={
+                  activeView === "projects"
+                    ? {
+                        backgroundColor: currentTheme.activeBadgeBg,
+                        borderColor: `${currentTheme.primary}44`,
+                        color: currentTheme.primary,
+                      }
+                    : {}
+                }
+                title="Undergoing Projects Lab: SYNTRA (Voice AI), Carx (Cars & Variants), CYNOVA (Security & Safety)"
+              >
+                <Layers className="w-3.5 h-3.5 text-purple-400" />
+                <span>Undergoing Projects</span>
+                <span className="text-[9px] px-1.5 py-0.2 rounded font-mono font-bold border bg-purple-500/20 border-purple-400/50 text-purple-300">
+                  3 NEW
                 </span>
               </button>
 
@@ -1508,7 +1623,7 @@ How may I assist your research objectives today, sir? You may speak naturally vi
             />
 
             {/* Upper Main: Full-Width Chat & Reasoning Stream */}
-            <div className="w-full h-[620px]">
+            <div id="main-chat-container" className="w-full h-[620px]">
               <ChatHUD
                 messages={messages}
                 onSendMessage={handleSendMessage}
@@ -1528,6 +1643,11 @@ How may I assist your research objectives today, sir? You may speak naturally vi
                   setShowAuthModal(true);
                 }}
               />
+            </div>
+
+            {/* Dedicated Visible Section: Undergoing Projects (SYNTRA, Carx, CYNOVA) */}
+            <div className="w-full">
+              <UndergoingProjectsSection themeMode={themeMode} />
             </div>
 
             {/* Down Below: STEM RESEARCH & CALCULATION DECK */}
@@ -1669,6 +1789,12 @@ How may I assist your research objectives today, sir? You may speak naturally vi
               onOpenConfirmationPrompt={handleOpenPowerSavingPrompt}
               themeMode={themeMode}
             />
+          </div>
+        )}
+
+        {activeView === "projects" && (
+          <div className="space-y-6 animate-fade-in">
+            <UndergoingProjectsSection themeMode={themeMode} />
           </div>
         )}
       </main>
