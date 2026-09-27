@@ -21,6 +21,7 @@ import {
 import { QuantumThemeMode } from "../types";
 import { QuantumTheme } from "../lib/themeConfig";
 import { playQuantumClick } from "../utils/soundEffects";
+import { speakQuantumMaleVoice, stopQuantumMaleVoice } from "../utils/maleVoiceEngine";
 
 export interface TourStep {
   id: string;
@@ -196,28 +197,13 @@ export const AppTourGuide: React.FC<AppTourGuideProps> = ({
 
     if (onSpeakText) {
       onSpeakText(textToSpeak);
-    } else if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(textToSpeak);
-      utterance.rate = 1.05;
-      utterance.pitch = 0.95;
-
-      const voices = window.speechSynthesis.getVoices();
-      const preferredVoice =
-        voices.find(
-          (v) =>
-            v.name.includes("UK English Male") ||
-            v.name.includes("Daniel") ||
-            v.name.includes("Oliver") ||
-            v.name.includes("Alex") ||
-            (v.lang.startsWith("en-GB") && !v.name.includes("Female"))
-        ) || voices.find((v) => v.lang.startsWith("en"));
-
-      if (preferredVoice) utterance.voice = preferredVoice;
-
-      utterance.onend = () => setIsLocalSpeaking(false);
-      utterance.onerror = () => setIsLocalSpeaking(false);
-      window.speechSynthesis.speak(utterance);
+    } else {
+      speakQuantumMaleVoice(textToSpeak, {
+        rate: 1.04,
+        onStart: () => setIsLocalSpeaking(true),
+        onEnd: () => setIsLocalSpeaking(false),
+        onError: () => setIsLocalSpeaking(false),
+      });
     }
   };
 
@@ -226,8 +212,8 @@ export const AppTourGuide: React.FC<AppTourGuideProps> = ({
     setIsLocalSpeaking(false);
     if (onStopSpeaking) {
       onStopSpeaking();
-    } else if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
+    } else {
+      stopQuantumMaleVoice();
     }
   };
 

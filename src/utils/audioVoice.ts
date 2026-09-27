@@ -1,5 +1,6 @@
 import { VoiceConfig, VoiceState } from "../types";
 import { cleanTextForSpeech } from "./speechUtils";
+import { getUnifiedMaleVoice } from "./maleVoiceEngine";
 
 // Check browser SpeechRecognition support
 const SpeechRecognition =
@@ -17,9 +18,9 @@ export class QuantumVoiceEngine {
   private onCommandReceived: (command: string) => void;
 
   public config: VoiceConfig = {
-    voiceTone: "British Refined (Quantum)",
-    rate: 1.05,
-    pitch: 0.95,
+    voiceTone: "British Refined Male (Quantum)",
+    rate: 1.04,
+    pitch: 0.85,
     continuousListening: false,
     autoSpeakResponse: true,
     wakeWordEnabled: true,
@@ -41,22 +42,11 @@ export class QuantumVoiceEngine {
     }
   }
 
-  private initVoices() {
+  public initVoices() {
     if (!this.synth) return;
-    const voices = this.synth.getVoices();
-    // Prioritize natural English voices (e.g. UK English Male, Google UK English, Daniel, Oliver, Alex)
-    const quantumVoice = voices.find(
-      (v) =>
-        v.name.includes("UK English Male") ||
-        v.name.includes("Daniel") ||
-        v.name.includes("Oliver") ||
-        v.name.includes("George") ||
-        (v.lang.startsWith("en-GB") && !v.name.includes("Female")) ||
-        v.name.includes("Google UK English Male")
-    ) || voices.find((v) => v.lang.startsWith("en-GB")) || voices.find((v) => v.lang.startsWith("en"));
-
-    if (quantumVoice) {
-      this.selectedVoice = quantumVoice;
+    const maleInfo = getUnifiedMaleVoice();
+    if (maleInfo.voice) {
+      this.selectedVoice = maleInfo.voice;
     }
   }
 
@@ -179,10 +169,20 @@ export class QuantumVoiceEngine {
         return;
       }
 
-      this.synth.cancel(); // cancel prior speech
+      // Resume if paused (fixes iOS / mobile Safari audio freeze)
+      try {
+        if (this.synth.paused) {
+          this.synth.resume();
+        }
+        this.synth.cancel(); // cancel prior speech
+      } catch {
+        // ignore
+      }
 
-      if (!this.selectedVoice) {
-        this.initVoices();
+      // Re-evaluate best male voice on every speak call (crucial for mobile phones where voices load dynamically)
+      const maleInfo = getUnifiedMaleVoice();
+      if (maleInfo.voice) {
+        this.selectedVoice = maleInfo.voice;
       }
 
       // Temporarily abort recognition while speaking to prevent microphone acoustic feedback loops
@@ -203,45 +203,56 @@ export class QuantumVoiceEngine {
         return;
       }
 
-      const utterance = new SpeechSynthesisUtterance(spokenText);
-      if (this.selectedVoice) {
-        utterance.voice = this.selectedVoice;
-      }
-      utterance.rate = this.config.rate;
-      utterance.pitch = this.config.pitch;
-
-      utterance.onstart = () => {
-        this.onStateChange({ isSpeaking: true, mode: "SPEAKING" });
-        this.simulateSpeakingAudioSpectrum();
-      };
-
-      utterance.onend = () => {
-        this.onStateChange({ isSpeaking: false, mode: "STANDBY", audioLevel: 0 });
-        if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
-        if (wasListening && this.config.continuousListening) {
-          try {
-            this.startListening();
-          } catch {
-            // ignore
-          }
+      // Small delay prevents mobile Android audio dropping when cancel() and speak() are adjacent
+      setTimeout(() => {
+        if (!this.synth) {
+          resolve();
+          return;
         }
-        resolve();
-      };
 
-      utterance.onerror = () => {
-        this.onStateChange({ isSpeaking: false, mode: "STANDBY", audioLevel: 0 });
-        if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
-        if (wasListening && this.config.continuousListening) {
-          try {
-            this.startListening();
-          } catch {
-            // ignore
-          }
+        const utterance = new SpeechSynthesisUtterance(spokenText);
+        if (this.selectedVoice) {
+          utterance.voice = this.selectedVoice;
+          utterance.lang = this.selectedVoice.lang;
         }
-        resolve();
-      };
 
-      this.synth.speak(utterance);
+        utterance.rate = this.config.rate;
+        // Masculine fundamental frequency: default 0.85 (deepens voice into masculine baritone)
+        utterance.pitch = this.config.pitch !== undefined ? this.config.pitch : (maleInfo.isExplicitMale ? 0.86 : 0.80);
+
+        utterance.onstart = () => {
+          this.onStateChange({ isSpeaking: true, mode: "SPEAKING" });
+          this.simulateSpeakingAudioSpectrum();
+        };
+
+        utterance.onend = () => {
+          this.onStateChange({ isSpeaking: false, mode: "STANDBY", audioLevel: 0 });
+          if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
+          if (wasListening && this.config.continuousListening) {
+            try {
+              this.startListening();
+            } catch {
+              // ignore
+            }
+          }
+          resolve();
+        };
+
+        utterance.onerror = () => {
+          this.onStateChange({ isSpeaking: false, mode: "STANDBY", audioLevel: 0 });
+          if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
+          if (wasListening && this.config.continuousListening) {
+            try {
+              this.startListening();
+            } catch {
+              // ignore
+            }
+          }
+          resolve();
+        };
+
+        this.synth.speak(utterance);
+      }, 20);
     });
   }
 

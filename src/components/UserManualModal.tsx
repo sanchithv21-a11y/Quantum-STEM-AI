@@ -681,8 +681,8 @@ export const UserManualModal: React.FC<UserManualModalProps> = ({
                     name: "Build Mode",
                     badge: "10–20 min",
                     color: "#10B981",
-                    purpose: "To build real life projects or app or website etc within 10 to 20 minutes",
-                    description: "Complete production-ready software systems, web applications, full file structures, schemas, styles, and step-by-step blueprints ready to deploy.",
+                    purpose: "To build real life projects, 60 FPS games, or websites within 10 to 20 minutes",
+                    description: "High-power project engine. Generates 100% complete, runnable 60 FPS HTML5 Canvas video games (with Web Audio SFX, physics, particles) and responsive modern websites/web applications (with Tailwind CSS, interactive DOM state, and responsive viewports). It takes deliberate time to engineer complete, working code without shortcuts or placeholders.",
                   },
                   {
                     name: "Relax Mode",

@@ -24,7 +24,12 @@ import {
   Zap,
   ChevronDown,
   History,
+  Gamepad2,
 } from "lucide-react";
+import { extractGameFromResponse, DetectedGame } from "../utils/gameDetector";
+import { extractProjectFromResponse, DetectedProject } from "../utils/projectDetector";
+import { GameInvitationCard } from "./GameInvitationCard";
+import { ProjectInvitationCard } from "./ProjectInvitationCard";
 
 interface ChatHUDProps {
   messages: ChatMessage[];
@@ -39,6 +44,9 @@ interface ChatHUDProps {
   onSelectModel?: (modelId: AIModelId) => void;
   onOpenModelsMatrix?: () => void;
   onOpenHistory?: () => void;
+  onOpenQuantumBot?: () => void;
+  onOpenPlayableGame?: (game: DetectedGame) => void;
+  onOpenWebsitePreview?: (project: DetectedProject) => void;
   isLoggedIn?: boolean;
   onRequireSignIn?: () => void;
 }
@@ -56,6 +64,9 @@ export const ChatHUD: React.FC<ChatHUDProps> = ({
   onSelectModel,
   onOpenModelsMatrix,
   onOpenHistory,
+  onOpenQuantumBot,
+  onOpenPlayableGame,
+  onOpenWebsitePreview,
   isLoggedIn = true,
   onRequireSignIn,
 }) => {
@@ -385,6 +396,32 @@ export const ChatHUD: React.FC<ChatHUDProps> = ({
               {/* KaTeX and Markdown Rendered STEM Content */}
               <KaTeXRenderer content={msg.content} />
 
+              {/* Interactive Playable Game or Website Invitation Card */}
+              {msg.role === "assistant" && (() => {
+                const detectedProject = extractProjectFromResponse(msg.content);
+                if (!detectedProject) return null;
+                return (
+                  <ProjectInvitationCard
+                    project={detectedProject}
+                    onLaunchProject={() => {
+                      if (detectedProject.type === "game") {
+                        onOpenPlayableGame?.({
+                          title: detectedProject.title,
+                          code: detectedProject.code,
+                          instructions: detectedProject.instructions || "",
+                          difficulty: detectedProject.difficulty || "Hard",
+                          genre: detectedProject.genre || "Arcade Physics",
+                          controls: detectedProject.controls || { desktop: "", mobile: "" },
+                        });
+                      } else {
+                        onOpenWebsitePreview?.(detectedProject);
+                      }
+                    }}
+                    themeMode={themeMode}
+                  />
+                );
+              })()}
+
               {/* Followup suggestions if available */}
               {msg.suggestedFollowups && msg.suggestedFollowups.length > 0 && (
                 <div className="mt-4 pt-3 border-t border-[#1E293B] space-y-2">
@@ -424,12 +461,56 @@ export const ChatHUD: React.FC<ChatHUDProps> = ({
         ))}
 
         {/* Processing Indicator */}
-        {isProcessing && (
+        {isProcessing && themeMode === "build" ? (
+          <div className="p-4 rounded-xl bg-[#04160B] border border-emerald-500/50 space-y-2.5 animate-fade-in font-mono shadow-2xl">
+            <div className="flex items-center justify-between text-xs text-emerald-300">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 animate-spin text-emerald-400" />
+                <span className="font-bold uppercase tracking-wider">
+                  QUANTUM DEEP BUILD MODE ACTIVE: SYNTHESIZING ARCHITECTURE
+                </span>
+              </div>
+              <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40">
+                GAMES &amp; WEBSITES ENGINE
+              </span>
+            </div>
+
+            {/* Pipeline Stage Indicators */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-slate-300">
+              <div className="flex items-center gap-2 bg-[#062010] p-2 rounded-lg border border-emerald-900/50">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping shrink-0" />
+                <span>Stage 1: Multi-File Blueprint &amp; System Specs</span>
+              </div>
+              <div className="flex items-center gap-2 bg-[#062010] p-2 rounded-lg border border-emerald-900/50">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                <span>Stage 2: 60 FPS Game Loop / Responsive DOM &amp; State</span>
+              </div>
+              <div className="flex items-center gap-2 bg-[#062010] p-2 rounded-lg border border-emerald-900/50">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                <span>Stage 3: Web Audio API SFX &amp; Physics / Shaders</span>
+              </div>
+              <div className="flex items-center gap-2 bg-[#062010] p-2 rounded-lg border border-emerald-900/50">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                <span>Stage 4: Syntax Verification &amp; Sandbox Bundling</span>
+              </div>
+            </div>
+
+            {/* Glowing compilation progress bar */}
+            <div className="w-full h-1.5 bg-[#052210] rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-emerald-500 via-teal-300 to-emerald-400 rounded-full animate-pulse w-4/5 shadow-[0_0_10px_#10B981]" />
+            </div>
+
+            <div className="text-[10px] text-slate-400 flex items-center justify-between">
+              <span>Deep compilation takes time for 100% complete runnable code without placeholders</span>
+              <span className="text-emerald-400 font-bold">10–20 Min Cadence Mode</span>
+            </div>
+          </div>
+        ) : isProcessing ? (
           <div className="flex items-center gap-3 p-3.5 rounded-xl bg-[#0A0F16] border border-[#00F2FF44] text-[#00F2FF] text-xs font-mono animate-pulse">
             <Atom className="w-4 h-4 text-[#00F2FF] animate-spin" />
-            <span>QUANTUM IS COMPUTING DERIVATIONS & SOLVING MATRICES...</span>
+            <span>QUANTUM IS COMPUTING DERIVATIONS &amp; SOLVING MATRICES...</span>
           </div>
-        )}
+        ) : null}
         <div ref={messagesEndRef} />
       </div>
 
@@ -546,6 +627,18 @@ export const ChatHUD: React.FC<ChatHUDProps> = ({
                 + All {AI_MODELS_ROSTER.length} Models &rarr;
               </button>
             )}
+
+            {onOpenQuantumBot && (
+              <button
+                type="button"
+                onClick={onOpenQuantumBot}
+                className="px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-bold text-cyan-200 bg-gradient-to-r from-cyan-950 to-blue-950 border border-cyan-400/60 hover:border-cyan-300 hover:scale-105 whitespace-nowrap cursor-pointer shadow-sm flex items-center gap-1.5"
+                title="Summon Quantum Bot (Grok-Engineered 10x Task Automator)"
+              >
+                <Zap className="w-3 h-3 text-cyan-400 fill-current animate-pulse" />
+                <span>⚡ QUANTUM BOT (10X AUTO)</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -584,6 +677,21 @@ export const ChatHUD: React.FC<ChatHUDProps> = ({
                 SIGN IN (FREE)
               </button>
             )}
+          </div>
+        )}
+
+        {/* Build Mode Active Status Banner */}
+        {themeMode === "build" && (
+          <div className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/40 text-emerald-300 text-xs font-mono">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              <span>
+                <strong className="text-white">BUILD MODE ARMED:</strong> Able to generate complete 60 FPS Games, Websites &amp; Web Apps. (Takes time for production-ready code)
+              </span>
+            </div>
+            <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold hidden sm:inline">
+              10–20 MIN CADENCE
+            </span>
           </div>
         )}
 

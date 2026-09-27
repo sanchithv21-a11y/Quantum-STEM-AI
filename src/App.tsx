@@ -24,10 +24,17 @@ import { SupportModal } from "./components/SupportModal";
 import { HeaderProfileVoice } from "./components/HeaderProfileVoice";
 import { PowerSavingModal } from "./components/PowerSavingModal";
 import { PowerSavingModeSection } from "./components/PowerSavingModeSection";
-import { UndergoingProjectsSection } from "./components/UndergoingProjectsSection";
 import { BrandLogo } from "./components/BrandLogo";
+import { QuantumBotModal } from "./components/QuantumBotModal";
+import { QuantumBotWidget } from "./components/QuantumBotWidget";
+import { QuantumGameArena } from "./components/QuantumGameArena";
+import { WebsitePreviewModal } from "./components/WebsitePreviewModal";
+import { HistoryOfQuantumPage } from "./components/HistoryOfQuantumPage";
+import { extractGameFromResponse, DetectedGame } from "./utils/gameDetector";
+import { DetectedProject } from "./utils/projectDetector";
 import { QuantumVoiceEngine } from "./utils/audioVoice";
-import { playQuantumClick } from "./utils/soundEffects";
+import { speakQuantumMaleVoice, stopQuantumMaleVoice } from "./utils/maleVoiceEngine";
+import { playQuantumClick, playQuantumBotChirp } from "./utils/soundEffects";
 import {
   Atom,
   Cpu,
@@ -191,9 +198,9 @@ export default function App() {
   });
 
   const [voiceConfig, setVoiceConfig] = useState<VoiceConfig>({
-    voiceTone: "British Refined",
-    rate: 1.05,
-    pitch: 0.95,
+    voiceTone: "British Refined Male (Quantum)",
+    rate: 1.04,
+    pitch: 0.85,
     continuousListening: false,
     autoSpeakResponse: true,
     wakeWordEnabled: true,
@@ -203,7 +210,7 @@ export default function App() {
 
   // Active view layout mode
   const [activeView, setActiveView] = useState<
-    "dashboard" | "basic" | "stem" | "calculator" | "desktop" | "models" | "codingz" | "history" | "login" | "powersaving" | "projects"
+    "dashboard" | "basic" | "stem" | "calculator" | "desktop" | "models" | "codingz" | "history" | "history_of_quantum" | "login" | "powersaving"
   >("dashboard");
   const [activeDomain, setActiveDomain] = useState<STEMDomain>("quantum");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -214,8 +221,50 @@ export default function App() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [showSupportModal, setShowSupportModal] = useState(false);
+  const [showQuantumBotModal, setShowQuantumBotModal] = useState(false);
+  const [showGameArena, setShowGameArena] = useState(false);
+  const [activeGame, setActiveGame] = useState<DetectedGame | null>(null);
+  const [showWebsiteModal, setShowWebsiteModal] = useState(false);
+  const [previewWebsite, setPreviewWebsite] = useState<DetectedProject | null>(null);
   const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
   const [stemInitialTab, setStemInitialTab] = useState<"formulas" | "simulations" | "research" | "code">("formulas");
+
+  // Listen for custom event from Code blocks or components to launch games or websites
+  useEffect(() => {
+    const handleLaunchGameEvent = (e: any) => {
+      if (e.detail?.code) {
+        const extracted = extractGameFromResponse(e.detail.code) || {
+          title: e.detail.title || "Quantum Interactive Game",
+          code: e.detail.code,
+          instructions: "Survive and score points! Use Arrow Keys/WASD to move, Space to action.",
+          difficulty: "Hard",
+          genre: "Arcade Physics",
+        };
+        setActiveGame(extracted);
+        setShowGameArena(true);
+      }
+    };
+
+    const handleLaunchWebsiteEvent = (e: any) => {
+      if (e.detail?.code) {
+        setPreviewWebsite({
+          id: `web_${Date.now()}`,
+          type: "website",
+          title: e.detail.title || "Quantum Synthesized Web Application",
+          code: e.detail.code,
+          framework: e.detail.framework || "HTML5 + Responsive CSS",
+        });
+        setShowWebsiteModal(true);
+      }
+    };
+
+    window.addEventListener("quantum-launch-game", handleLaunchGameEvent);
+    window.addEventListener("quantum-launch-website", handleLaunchWebsiteEvent);
+    return () => {
+      window.removeEventListener("quantum-launch-game", handleLaunchGameEvent);
+      window.removeEventListener("quantum-launch-website", handleLaunchWebsiteEvent);
+    };
+  }, []);
 
   // Power Saving Mode State & Screen Dimming Control
   const [isPowerSavingMode, setIsPowerSavingMode] = useState<boolean>(() => {
@@ -294,11 +343,8 @@ How may I assist your research objectives today, sir? You may speak naturally vi
       playQuantumClick();
       if (voiceEngineRef.current) {
         voiceEngineRef.current.speak("Please first sign in and ask questions, sir.");
-      } else if (typeof window !== "undefined" && window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance("Please first sign in and ask questions, sir.");
-        utterance.rate = 1.05;
-        window.speechSynthesis.speak(utterance);
+      } else {
+        speakQuantumMaleVoice("Please first sign in and ask questions, sir.");
       }
       setAuthNoticeMessage("Please first sign in and ask questions, sir");
       setShowAuthModal(true);
@@ -342,6 +388,8 @@ How may I assist your research objectives today, sir? You may speak naturally vi
   const handleSpeakMessage = (text: string) => {
     if (voiceEngineRef.current) {
       voiceEngineRef.current.speak(text);
+    } else {
+      speakQuantumMaleVoice(text);
     }
   };
 
@@ -352,12 +400,8 @@ How may I assist your research objectives today, sir? You may speak naturally vi
       "Good choice sir because it will consume less power and screen will become little dim. Is that ok for you sir?";
     if (voiceEngineRef.current) {
       voiceEngineRef.current.speak(textToSpeak);
-    } else if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(textToSpeak);
-      utterance.rate = 1.05;
-      utterance.pitch = 0.95;
-      window.speechSynthesis.speak(utterance);
+    } else {
+      speakQuantumMaleVoice(textToSpeak, { rate: 1.04 });
     }
   };
 
@@ -440,11 +484,8 @@ How may I assist your research objectives today, sir? You may speak naturally vi
       // Voice prompt: Vocalize "Please first sign in and ask questions, sir"
       if (voiceEngineRef.current) {
         voiceEngineRef.current.speak("Please first sign in and ask questions, sir.");
-      } else if (typeof window !== "undefined" && window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance("Please first sign in and ask questions, sir.");
-        utterance.rate = 1.05;
-        window.speechSynthesis.speak(utterance);
+      } else {
+        speakQuantumMaleVoice("Please first sign in and ask questions, sir.");
       }
 
       setAuthNoticeMessage("Please first sign in and ask questions, sir");
@@ -455,6 +496,42 @@ How may I assist your research objectives today, sir? You may speak naturally vi
     const targetModelId = overrideModelId || activeModelId;
     const targetModelMeta =
       AI_MODELS_ROSTER.find((m) => m.id === targetModelId) || activeModelMeta;
+
+    // Check if user is responding affirmatively to play a created game
+    const cleanText = text.trim().toLowerCase();
+    const isAffirmativePlay = /^(?:yes|yeah|yep|sure|ok|okay|play|start|play game|let's play|lets play|yes sir|yes please|i want to play|open game|run game|yes i want to play)[\.\!\?]*$/i.test(cleanText);
+
+    if (isAffirmativePlay) {
+      const lastGameMsg = [...messages].reverse().find((m) => m.role === "assistant" && extractGameFromResponse(m.content));
+      if (lastGameMsg) {
+        const detected = extractGameFromResponse(lastGameMsg.content);
+        if (detected) {
+          setActiveGame(detected);
+          setShowGameArena(true);
+
+          const userMsg: ChatMessage = {
+            id: `usr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            role: "user",
+            content: text,
+            timestamp: new Date().toLocaleTimeString(),
+            domain,
+            isVoiceInput: isVoice,
+          };
+
+          const ackMsg: ChatMessage = {
+            id: `asst-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            role: "assistant",
+            content: `Certainly, sir! Launching **${detected.title}** now. You can play as much time as you want without restrictions. Use the cross icon (X) to exit whenever you are finished.`,
+            timestamp: new Date().toLocaleTimeString(),
+            domain,
+          };
+
+          setMessages((prev) => [...prev, userMsg, ackMsg]);
+          speakQuantumMaleVoice(`Launching ${detected.title} now, sir. You can play as long as you wish. Use the cross icon to exit whenever you are ready.`);
+          return;
+        }
+      }
+    }
 
     const userMessage: ChatMessage = {
       id: `usr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -505,6 +582,11 @@ How may I assist your research objectives today, sir? You may speak naturally vi
         }
       }
 
+      const detectedGame = extractGameFromResponse(assistantText);
+      if (detectedGame) {
+        setActiveGame(detectedGame);
+      }
+
       const assistantMessage: ChatMessage = {
         id: `asst-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         role: "assistant",
@@ -513,21 +595,32 @@ How may I assist your research objectives today, sir? You may speak naturally vi
         domain,
         model: data.model || targetModelId,
         modelName: data.modelName || targetModelMeta.name,
-        suggestedFollowups: [
-          `Analyze physical boundary conditions for this result`,
-          `Plot computational response curve in Sci-Kernel`,
-          `Review ArXiv literature related to this topic`,
-        ],
+        suggestedFollowups: detectedGame
+          ? [
+              `Yes, let's play the game!`,
+              `How do I play this game?`,
+              `Make the game even more difficult and challenging`,
+              `Show me how the physics and collision loops work`,
+            ]
+          : [
+              `Analyze physical boundary conditions for this result`,
+              `Plot computational response curve in Sci-Kernel`,
+              `Review ArXiv literature related to this topic`,
+            ],
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
       setIsProcessing(false);
       setVoiceState((prev) => ({ ...prev, isProcessing: false, mode: "STANDBY" }));
 
-      // Auto-speak response if enabled (for main Voice HUD)
-      if (voiceConfig.autoSpeakResponse) {
+      // Voice Output: For games, speak concise invitation rather than reading raw code blocks
+      if (detectedGame) {
+        speakQuantumMaleVoice(`I have built your game, sir: ${detectedGame.title}. Do you want to play the game you created, sir?`);
+      } else if (voiceConfig.autoSpeakResponse) {
         if (voiceEngineRef.current) {
           voiceEngineRef.current.speak(assistantText);
+        } else {
+          speakQuantumMaleVoice(assistantText);
         }
       }
     } catch (err: any) {
@@ -897,24 +990,24 @@ How may I assist your research objectives today, sir? You may speak naturally vi
                         )}
                       </button>
 
-                      {/* Undergoing Projects Option (SYNTRA, Carx, CYNOVA) */}
+                      {/* History of Quantum Genesis Link */}
                       <button
                         onClick={() => {
-                          setActiveView("projects");
+                          setActiveView("history_of_quantum");
                           setShowWorkspaceDropdown(false);
                         }}
                         className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all cursor-pointer text-left ${
-                          activeView === "projects"
-                            ? "bg-purple-500/20 text-purple-300 font-bold border border-purple-500/40"
+                          activeView === "history_of_quantum"
+                            ? "bg-yellow-500/20 text-yellow-300 font-bold border border-yellow-500/40"
                             : "text-slate-300 hover:bg-slate-800/80 hover:text-white"
                         }`}
                       >
                         <div className="flex items-center gap-2">
-                          <Layers className="w-3.5 h-3.5 text-purple-400" />
-                          <span>Undergoing Projects (3)</span>
+                          <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
+                          <span>History of Quantum (Genesis)</span>
                         </div>
-                        {activeView === "projects" && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_8px_#A855F7]" />
+                        {activeView === "history_of_quantum" && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-yellow-400 shadow-[0_0_8px_#EAB308]" />
                         )}
                       </button>
 
@@ -1087,7 +1180,7 @@ How may I assist your research objectives today, sir? You may speak naturally vi
                 title={`Session Inquiry Logs & Transcripts (${messages.length} exchanges)`}
               >
                 <History className="w-3.5 h-3.5" />
-                <span>History</span>
+                <span>Logs</span>
                 <span
                   className="text-[9px] px-1.5 py-0.2 rounded font-mono font-bold border bg-cyan-500/20 border-cyan-500/40 text-cyan-300"
                 >
@@ -1095,20 +1188,20 @@ How may I assist your research objectives today, sir? You may speak naturally vi
                 </span>
               </button>
 
-              {/* Dedicated Undergoing Projects Tab */}
+              {/* Dedicated History of Quantum Tab */}
               <button
-                id="nav-undergoing-projects-tab-btn"
+                id="nav-history-of-quantum-tab-btn"
                 onClick={() => {
                   playQuantumClick();
-                  setActiveView("projects");
+                  setActiveView("history_of_quantum");
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-all cursor-pointer ${
-                  activeView === "projects"
+                  activeView === "history_of_quantum"
                     ? "border font-medium shadow-sm"
                     : "text-slate-400 hover:text-slate-200"
                 }`}
                 style={
-                  activeView === "projects"
+                  activeView === "history_of_quantum"
                     ? {
                         backgroundColor: currentTheme.activeBadgeBg,
                         borderColor: `${currentTheme.primary}44`,
@@ -1116,12 +1209,12 @@ How may I assist your research objectives today, sir? You may speak naturally vi
                       }
                     : {}
                 }
-                title="Undergoing Projects Lab: SYNTRA (Voice AI), Carx (Cars & Variants), CYNOVA (Security & Safety)"
+                title="History of Quantum: Built by Master Sanchith in Google AI Studio"
               >
-                <Layers className="w-3.5 h-3.5 text-purple-400" />
-                <span>Undergoing Projects</span>
-                <span className="text-[9px] px-1.5 py-0.2 rounded font-mono font-bold border bg-purple-500/20 border-purple-400/50 text-purple-300">
-                  3 NEW
+                <Sparkles className="w-3.5 h-3.5 text-yellow-400 animate-pulse" />
+                <span>History of Quantum</span>
+                <span className="text-[9px] px-1.5 py-0.2 rounded font-mono font-bold border bg-yellow-500/20 border-yellow-400/50 text-yellow-300">
+                  ORIGIN
                 </span>
               </button>
 
@@ -1175,6 +1268,22 @@ How may I assist your research objectives today, sir? You may speak naturally vi
             >
               <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
               <span>APP TOUR</span>
+            </button>
+
+            {/* Dedicated Quantum Bot (Grok-Engineered 10x Task Automator) Button */}
+            <button
+              onClick={() => {
+                playQuantumBotChirp();
+                setShowQuantumBotModal(true);
+              }}
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg border text-xs font-mono font-black transition-all cursor-pointer group shadow-lg hover:scale-105 bg-gradient-to-r from-cyan-950/80 via-[#071326] to-blue-950/80 border-cyan-400 text-cyan-300 shadow-[0_0_18px_rgba(0,242,255,0.35)]"
+              title="Launch Quantum Bot: Grok-Grade 10x Task Automator & Autonomous Intelligence Engine"
+            >
+              <Zap className="w-3.5 h-3.5 text-cyan-400 animate-pulse fill-current" />
+              <span>QUANTUM BOT</span>
+              <span className="text-[9px] px-1.5 py-0.2 rounded-full font-mono font-bold border bg-cyan-500/25 border-cyan-400 text-white">
+                10X AUTO
+              </span>
             </button>
 
             {/* Dedicated Daily STEM News Button */}
@@ -1561,6 +1670,20 @@ How may I assist your research objectives today, sir? You may speak naturally vi
                   </span>
                   <span className="text-[10px] text-emerald-400 font-bold">Launch &rarr;</span>
                 </button>
+
+                <button
+                  onClick={() => {
+                    playQuantumClick();
+                    setActiveView("history_of_quantum");
+                  }}
+                  className="w-full py-2 px-2.5 rounded-lg border border-yellow-500/30 bg-gradient-to-r from-yellow-950/20 to-[#0E1520] hover:border-yellow-400/60 text-[11px] font-mono text-yellow-200 flex items-center justify-between transition-all cursor-pointer group shadow-sm"
+                >
+                  <span className="flex items-center gap-1.5 group-hover:text-yellow-300">
+                    <Sparkles className="w-3.5 h-3.5 text-yellow-400 animate-pulse" />
+                    History of Quantum
+                  </span>
+                  <span className="text-[10px] text-yellow-300 font-bold">Genesis &rarr;</span>
+                </button>
               </div>
             </div>
 
@@ -1652,17 +1775,21 @@ How may I assist your research objectives today, sir? You may speak naturally vi
                 onSelectModel={handleSelectModel}
                 onOpenModelsMatrix={() => setActiveView("models")}
                 onOpenHistory={() => setActiveView("history")}
+                onOpenQuantumBot={() => setShowQuantumBotModal(true)}
+                onOpenPlayableGame={(game) => {
+                  setActiveGame(game);
+                  setShowGameArena(true);
+                }}
+                onOpenWebsitePreview={(project) => {
+                  setPreviewWebsite(project);
+                  setShowWebsiteModal(true);
+                }}
                 isLoggedIn={!!currentUser}
                 onRequireSignIn={() => {
                   setAuthNoticeMessage("Please first sign in and ask questions, sir");
                   setShowAuthModal(true);
                 }}
               />
-            </div>
-
-            {/* Dedicated Visible Section: Undergoing Projects (SYNTRA, Carx, CYNOVA) */}
-            <div className="w-full">
-              <UndergoingProjectsSection themeMode={themeMode} />
             </div>
 
             {/* Down Below: STEM RESEARCH & CALCULATION DECK */}
@@ -1807,9 +1934,16 @@ How may I assist your research objectives today, sir? You may speak naturally vi
           </div>
         )}
 
-        {activeView === "projects" && (
+        {activeView === "history_of_quantum" && (
           <div className="space-y-6 animate-fade-in">
-            <UndergoingProjectsSection themeMode={themeMode} />
+            <HistoryOfQuantumPage
+              onBackToDashboard={() => setActiveView("dashboard")}
+              onNavigateToPrompt={(prompt) => {
+                setActiveView("dashboard");
+                handleSendMessage(prompt);
+              }}
+              themeMode={themeMode}
+            />
           </div>
         )}
       </main>
@@ -1843,8 +1977,18 @@ How may I assist your research objectives today, sir? You may speak naturally vi
             </span>
           </div>
 
-          <div className="text-center text-[10px] text-slate-400/90 font-sans">
-            Quantum can make mistakes. Pls double check your response
+          <div className="text-center text-[10px] text-slate-400/90 font-sans flex items-center justify-center gap-3">
+            <span>Quantum can make mistakes. Pls double check your response</span>
+            <span>•</span>
+            <button
+              onClick={() => {
+                playQuantumClick();
+                setActiveView("history_of_quantum");
+              }}
+              className="text-yellow-400/90 hover:text-yellow-300 underline underline-offset-2 transition-colors cursor-pointer font-mono"
+            >
+              History of Quantum (Genesis)
+            </button>
           </div>
 
           <div className="flex items-center space-x-6 text-white/40">
@@ -1920,21 +2064,13 @@ How may I assist your research objectives today, sir? You may speak naturally vi
         onSpeakText={(text) => {
           if (voiceEngineRef.current) {
             voiceEngineRef.current.speak(text);
-          } else if (typeof window !== "undefined" && window.speechSynthesis) {
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = 1.05;
-            utterance.pitch = 0.95;
-            window.speechSynthesis.speak(utterance);
+          } else {
+            speakQuantumMaleVoice(text);
           }
         }}
         onStopSpeaking={() => {
-          if (voiceEngineRef.current) {
-            voiceEngineRef.current.stopSpeaking();
-          }
-          if (typeof window !== "undefined" && window.speechSynthesis) {
-            window.speechSynthesis.cancel();
-          }
+          voiceEngineRef.current?.stopSpeaking();
+          stopQuantumMaleVoice();
         }}
         isSpeakingAudio={voiceState.isSpeaking}
         onNavigateView={(view, editionTarget) => {
@@ -1980,6 +2116,10 @@ How may I assist your research objectives today, sir? You may speak naturally vi
       <AboutModal
         isOpen={showAboutModal}
         onClose={() => setShowAboutModal(false)}
+        onOpenHistoryOfQuantum={() => {
+          setShowAboutModal(false);
+          setActiveView("history_of_quantum");
+        }}
       />
 
       {/* Support & Diagnostics Desk Modal */}
@@ -2002,6 +2142,48 @@ How may I assist your research objectives today, sir? You may speak naturally vi
         onLogout={handleLogout}
         themeMode={themeMode}
         noticeMessage={authNoticeMessage}
+      />
+
+      {/* Quantum Bot Modal (Grok-Engineered 10x Task Automation Cockpit) */}
+      <QuantumBotModal
+        isOpen={showQuantumBotModal}
+        onClose={() => setShowQuantumBotModal(false)}
+        onSendToMainChat={(prompt) => {
+          handleSendMessage(prompt);
+          setActiveView("dashboard");
+        }}
+        themeMode={themeMode}
+      />
+
+      {/* Floating Interactive Quantum Bot Companion with Movement Animation */}
+      <QuantumBotWidget
+        onOpenModal={() => setShowQuantumBotModal(true)}
+        onQuickTask={(prompt) => {
+          setShowQuantumBotModal(true);
+        }}
+        themeMode={themeMode}
+      />
+
+      {/* Quantum Game Arena: Real-time Playable Canvas Game Engine, Instructions, Cross Icon & Full Code Inspector */}
+      <QuantumGameArena
+        isOpen={showGameArena}
+        onClose={() => setShowGameArena(false)}
+        gameTitle={activeGame?.title || "Quantum Interactive Game"}
+        gameCode={activeGame?.code || ""}
+        instructions={activeGame?.instructions}
+        difficulty={activeGame?.difficulty}
+        genre={activeGame?.genre}
+        themeMode={themeMode}
+      />
+
+      {/* Quantum Website Preview Modal: Live Interactive Web Sandbox, Responsive Device Viewports & Code Inspector */}
+      <WebsitePreviewModal
+        isOpen={showWebsiteModal}
+        onClose={() => setShowWebsiteModal(false)}
+        title={previewWebsite?.title || "Quantum Synthesized Web Application"}
+        code={previewWebsite?.code || ""}
+        framework={previewWebsite?.framework}
+        themeMode={themeMode}
       />
     </div>
   );

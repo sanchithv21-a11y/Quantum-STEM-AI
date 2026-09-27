@@ -42,6 +42,8 @@ import {
   Users,
 } from "lucide-react";
 
+import { CodingzBuildStudio } from "./CodingzBuildStudio";
+
 interface CodingzWorkspaceProps {
   onSendToQuantum?: (prompt: string, domain?: STEMDomain) => void;
   themeMode?: QuantumThemeMode;
@@ -540,7 +542,8 @@ export const CodingzWorkspace: React.FC<CodingzWorkspaceProps> = ({
   // "copilot" -> AI code synthesis, refactoring, complexity & test generator
   // "agents" -> Dedicated AI Coding Agents Roster & Multi-Agent Consensus Swarm
   // "stuffs" -> Developer power-tools (JSON, Regex, Base64/Hash, REST Tester, UUID/Unix)
-  const [activeTab, setActiveTab] = useState<"ide" | "copilot" | "agents" | "stuffs">("ide");
+  // "build" -> Deep Build Mode Studio for Games & Websites Synthesis
+  const [activeTab, setActiveTab] = useState<"ide" | "copilot" | "agents" | "stuffs" | "build">("ide");
 
   // Selected Active AI Agent - 100% Free & Unrestricted for all users
   const [selectedAgentId, setSelectedAgentId] = useState<AIModelId>("quantum-prime");
@@ -1253,6 +1256,23 @@ export const CodingzWorkspace: React.FC<CodingzWorkspaceProps> = ({
               className="text-[9px] px-1.5 py-0.2 rounded-full font-bold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400"
             >
               5 Tools
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("build")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-all cursor-pointer ${
+              activeTab === "build"
+                ? "bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 font-bold shadow-sm"
+                : "text-slate-400 hover:text-slate-200 border border-transparent"
+            }`}
+          >
+            <Flame className="w-3.5 h-3.5 text-emerald-400" />
+            <span>5. Build Mode (Games &amp; Websites)</span>
+            <span
+              className="text-[9px] px-1.5 py-0.2 rounded-full font-bold bg-emerald-500/20 text-emerald-300 uppercase"
+            >
+              Powerhouse
             </span>
           </button>
         </div>
@@ -2572,6 +2592,20 @@ export const CodingzWorkspace: React.FC<CodingzWorkspaceProps> = ({
               )}
             </div>
           </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 5: BUILD MODE STUDIO (GAMES & WEBSITES SYNTHESIS) */}
+        {/* ========================================================================= */}
+        {activeTab === "build" && (
+          <CodingzBuildStudio
+            onLoadCodeIntoIDE={(code, lang) => {
+              setCodeContent(code);
+              if (lang) setSelectedLanguage(lang as any);
+              setActiveTab("ide");
+            }}
+            onSendToQuantum={onSendToQuantum}
+          />
         )}
       </div>
     </div>

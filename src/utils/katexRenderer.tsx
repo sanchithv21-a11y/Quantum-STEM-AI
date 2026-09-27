@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import katex from "katex";
-import { Check, Copy, Terminal } from "lucide-react";
+import { Check, Copy, Terminal, Play } from "lucide-react";
 
 interface KaTeXRendererProps {
   content: string;
@@ -421,6 +421,10 @@ function renderBoldItalics(text: string, keyPrefix: string): React.ReactNode {
 const CodeSnippetBlock: React.FC<{ language: string; code: string }> = ({ language, code }) => {
   const [copied, setCopied] = useState(false);
 
+  const isPlayableGame =
+    /(?:<canvas|requestanimationframe|game\s*loop|keydown|gameover|game\s*over)/i.test(code) &&
+    (language.toLowerCase().includes("html") || language.toLowerCase().includes("js") || code.includes("<html"));
+
   const handleCopy = () => {
     try {
       if (navigator?.clipboard?.writeText) {
@@ -433,21 +437,49 @@ const CodeSnippetBlock: React.FC<{ language: string; code: string }> = ({ langua
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleLaunchGame = () => {
+    try {
+      const event = new CustomEvent("quantum-launch-game", {
+        detail: { code, title: "Quantum Synthesized Game" },
+      });
+      window.dispatchEvent(event);
+    } catch {
+      // Safe fallback
+    }
+  };
+
   return (
     <div className="my-3 rounded-lg border border-cyan-500/20 bg-[#080d1a] overflow-hidden shadow-lg max-w-full">
       <div className="flex items-center justify-between px-3 py-1.5 bg-slate-900/80 border-b border-cyan-900/30 text-xs font-mono text-cyan-400">
         <div className="flex items-center gap-2">
           <Terminal className="w-3.5 h-3.5 text-cyan-400" />
           <span className="uppercase tracking-wider font-bold">{language || "code"}</span>
+          {isPlayableGame && (
+            <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              Interactive Game
+            </span>
+          )}
         </div>
-        <button
-          onClick={handleCopy}
-          className="flex items-center gap-1 text-slate-400 hover:text-cyan-300 transition-colors px-2 py-0.5 rounded hover:bg-cyan-950/50 cursor-pointer"
-          title="Copy code"
-        >
-          {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-          <span>{copied ? "Copied" : "Copy"}</span>
-        </button>
+        <div className="flex items-center gap-1.5">
+          {isPlayableGame && (
+            <button
+              onClick={handleLaunchGame}
+              className="flex items-center gap-1 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 hover:text-white px-2 py-0.5 rounded border border-cyan-500/40 text-xs font-mono cursor-pointer transition-all shadow-sm"
+              title="Launch this game in Quantum Arena"
+            >
+              <Play className="w-3 h-3 fill-current" />
+              <span>Play Game</span>
+            </button>
+          )}
+          <button
+            onClick={handleCopy}
+            className="flex items-center gap-1 text-slate-400 hover:text-cyan-300 transition-colors px-2 py-0.5 rounded hover:bg-cyan-950/50 cursor-pointer"
+            title="Copy code"
+          >
+            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+            <span>{copied ? "Copied" : "Copy"}</span>
+          </button>
+        </div>
       </div>
       <pre className="p-3.5 text-xs font-mono text-slate-200 overflow-x-auto leading-relaxed selection:bg-cyan-500/40">
         <code>{code.trim()}</code>

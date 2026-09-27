@@ -29,6 +29,7 @@ import { EmailDraft } from "../utils/emailClientUtils";
 import { ReviewsTab } from "./ReviewsTab";
 import { ActivityLogsTab } from "./ActivityLogsTab";
 import { UserReview, UserActivityLog, AuthUser } from "../types";
+import { speakQuantumMaleVoice, stopQuantumMaleVoice } from "../utils/maleVoiceEngine";
 
 interface SupportModalProps {
   isOpen: boolean;
@@ -103,23 +104,24 @@ export const SupportModal: React.FC<SupportModalProps> = ({
   const [activities, setActivities] = useState<UserActivityLog[]>([]);
   const [loadingActivities, setLoadingActivities] = useState(false);
 
-  // Admin / Creator verification state (Only Sanchith can see user activity logs)
+  // Admin / Creator verification state (Only Sanchith with the master passkey can see user activity logs)
   const [isAdminUnlocked, setIsAdminUnlocked] = useState<boolean>(() => {
     try {
-      return (
+      const isVerified =
         sessionStorage.getItem("quantum_admin_verified") === "true" ||
-        localStorage.getItem("quantum_admin_verified") === "true"
-      );
+        localStorage.getItem("quantum_admin_verified") === "true";
+      const key =
+        sessionStorage.getItem("quantum_admin_key") ||
+        localStorage.getItem("quantum_admin_key") ||
+        "";
+      return Boolean(isVerified && key);
     } catch {
       return false;
     }
   });
 
-  const isCreator = Boolean(
-    /sanchith/i.test(currentUser?.email || "") ||
-    /sanchith/i.test(currentUser?.name || "") ||
-    isAdminUnlocked
-  );
+  // Strict creator check: requires the secure passkey to have been entered
+  const isCreator = Boolean(isAdminUnlocked);
 
   const handleTriggerEmailCompose = (draft: EmailDraft) => {
     setEmailModalDraft(draft);
@@ -190,25 +192,33 @@ export const SupportModal: React.FC<SupportModalProps> = ({
 
   // Fetch user activity logs (Who used app & at which time - Creator Only)
   const fetchActivities = async () => {
-    if (!isCreator) {
+    let key = "";
+    try {
+      key =
+        sessionStorage.getItem("quantum_admin_key") ||
+        localStorage.getItem("quantum_admin_key") ||
+        "";
+    } catch {}
+
+    if (!key || !isAdminUnlocked) {
       setActivities([]);
       return;
     }
+
     setLoadingActivities(true);
     try {
-      const email = currentUser?.email || "sanchithv21@gmail.com";
-      const res = await fetch(
-        `/api/activity/logs?adminEmail=${encodeURIComponent(email)}&unlock=sanchith21`,
-        {
-          headers: {
-            "x-admin-key": "sanchith21",
-            "x-admin-email": email,
-          },
-        }
-      );
+      const res = await fetch("/api/activity/logs", {
+        headers: {
+          "x-admin-key": key,
+        },
+      });
       if (res.ok) {
         const data = await res.json();
         setActivities(data.logs || []);
+      } else if (res.status === 403) {
+        // Master passkey invalid or session expired
+        setIsAdminUnlocked(false);
+        setActivities([]);
       }
     } catch (err) {
       console.error("Failed to load activity logs:", err);
@@ -261,16 +271,12 @@ export const SupportModal: React.FC<SupportModalProps> = ({
 
   const handleTestAudio = () => {
     setTestingAudio(true);
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance("Audio synthesis subsystem verified and operational, sir.");
-      utterance.rate = 1.05;
-      utterance.onend = () => setTestingAudio(false);
-      utterance.onerror = () => setTestingAudio(false);
-      window.speechSynthesis.speak(utterance);
-    } else {
-      setTestingAudio(false);
-    }
+    speakQuantumMaleVoice("Audio synthesis subsystem verified and operational, sir. Male neural voice active.", {
+      rate: 1.04,
+      onStart: () => setTestingAudio(true),
+      onEnd: () => setTestingAudio(false),
+      onError: () => setTestingAudio(false),
+    });
   };
 
   const handleFileComplaint = async (e: React.FormEvent) => {
@@ -321,18 +327,11 @@ export const SupportModal: React.FC<SupportModalProps> = ({
       // Refresh complaints list
       fetchComplaints();
 
-      // Vocalize confirmation politely to user
-      if (typeof window !== "undefined" && window.speechSynthesis) {
-        try {
-          const utterance = new SpeechSynthesisUtterance(
-            "Thank you sir for sending your complaint. We will rectify it and email you ASAP."
-          );
-          utterance.rate = 1.0;
-          window.speechSynthesis.speak(utterance);
-        } catch {
-          // Ignore speech errors
-        }
-      }
+      // Vocalize confirmation politely to user using unified male voice
+      speakQuantumMaleVoice(
+        "Thank you sir for sending your complaint. We will rectify it and email you ASAP.",
+        { rate: 1.02 }
+      );
     } catch (err: any) {
       setTicketSubmitted(true);
       setSubmissionResult({
@@ -1081,12 +1080,22 @@ export const SupportModal: React.FC<SupportModalProps> = ({
               activities={activities}
               isLoading={loadingActivities}
               onRefresh={fetchActivities}
-              isCreator={isCreator}
-              onUnlockCreator={() => {
+              isCreator={isAdminUnlocked}
+              onUnlockCreator={(verifiedKey) => {
                 setIsAdminUnlocked(true);
                 setTimeout(() => {
                   fetchActivities();
                 }, 50);
+              }}
+              onLockCreator={() => {
+                try {
+                  sessionStorage.removeItem("quantum_admin_verified");
+                  sessionStorage.removeItem("quantum_admin_key");
+                  localStorage.removeItem("quantum_admin_verified");
+                  localStorage.removeItem("quantum_admin_key");
+                } catch {}
+                setIsAdminUnlocked(false);
+                setActivities([]);
               }}
               onContactUser={(email, name, subject) => {
                 handleTriggerEmailCompose({

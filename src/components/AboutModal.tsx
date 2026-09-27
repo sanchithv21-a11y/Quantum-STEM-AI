@@ -17,9 +17,10 @@ import {
 interface AboutModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenHistoryOfQuantum?: () => void;
 }
 
-export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
+export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, onOpenHistoryOfQuantum }) => {
   if (!isOpen) return null;
 
   return (
@@ -144,10 +145,34 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             </div>
           </div>
 
+          {/* Creator & History Notice */}
+          <div className="p-3.5 rounded-xl border border-yellow-500/30 bg-gradient-to-r from-yellow-950/30 via-[#0C121D] to-slate-900 flex items-center justify-between gap-3 text-xs">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-1.5 text-yellow-300 font-bold">
+                <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
+                <span>Built by Master Sanchith</span>
+              </div>
+              <p className="text-[11px] text-slate-300 leading-snug">
+                Built in August 2026 over 2–3 weeks using prompting skills in Google AI Studio.
+              </p>
+            </div>
+            {onOpenHistoryOfQuantum && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onOpenHistoryOfQuantum();
+                }}
+                className="px-3 py-1.5 rounded-lg border border-yellow-500/50 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-200 font-bold text-[11px] whitespace-nowrap cursor-pointer transition-all hover:scale-105"
+              >
+                View History &rarr;
+              </button>
+            )}
+          </div>
+
           {/* Footer Info */}
           <div className="pt-2 flex items-center justify-between text-slate-500 text-[11px] border-t border-[#1E293B]">
             <div className="flex items-center gap-1.5">
-              <span>Crafted for Sovereign Computing</span>
+              <span>Crafted by Master Sanchith in Google AI Studio</span>
               <Heart className="w-3 h-3 text-red-500 fill-red-500/30" />
             </div>
             <button

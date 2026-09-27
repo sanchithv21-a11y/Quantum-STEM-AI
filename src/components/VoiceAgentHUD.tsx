@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { VoiceConfig, VoiceState, QuantumThemeMode } from "../types";
 import { QUANTUM_THEMES } from "../lib/themeConfig";
+import { getUnifiedMaleVoice, speakQuantumMaleVoice, stopQuantumMaleVoice } from "../utils/maleVoiceEngine";
 import {
   Mic,
   MicOff,
@@ -13,6 +14,8 @@ import {
   ChevronUp,
   ChevronDown,
   Activity,
+  UserCheck,
+  Play,
 } from "lucide-react";
 
 interface VoiceAgentHUDProps {
@@ -39,7 +42,39 @@ export const VoiceAgentHUD: React.FC<VoiceAgentHUDProps> = ({
   className = "",
 }) => {
   const [showSettings, setShowSettings] = useState(false);
+  const [maleVoiceName, setMaleVoiceName] = useState<string>("Calibrating Male Voice...");
+  const [isTestingVoice, setIsTestingVoice] = useState(false);
   const theme = QUANTUM_THEMES[themeMode] || QUANTUM_THEMES.normal;
+
+  useEffect(() => {
+    const updateVoice = () => {
+      const info = getUnifiedMaleVoice();
+      setMaleVoiceName(info.name);
+    };
+    updateVoice();
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.onvoiceschanged = updateVoice;
+    }
+  }, []);
+
+  const handleTestMaleVoice = () => {
+    if (isTestingVoice) {
+      stopQuantumMaleVoice();
+      setIsTestingVoice(false);
+      return;
+    }
+    setIsTestingVoice(true);
+    speakQuantumMaleVoice(
+      "Greetings sir. Quantum male neural voice is operational and synchronized across phone and laptop.",
+      {
+        rate: voiceConfig.rate,
+        pitch: voiceConfig.pitch,
+        onStart: () => setIsTestingVoice(true),
+        onEnd: () => setIsTestingVoice(false),
+        onError: () => setIsTestingVoice(false),
+      }
+    );
+  };
 
   const quickVoicePrompts = [
     "Quantum, calculate Schwarzschild radius for a 10 solar mass star",
@@ -273,7 +308,7 @@ export const VoiceAgentHUD: React.FC<VoiceAgentHUDProps> = ({
             </div>
             <div>
               <label className="text-white/50 text-[11px] block mb-1.5">
-                Voice Pitch: {voiceConfig.pitch}
+                Voice Pitch: {voiceConfig.pitch} (Deep Baritone)
               </label>
               <input
                 type="range"
@@ -286,6 +321,40 @@ export const VoiceAgentHUD: React.FC<VoiceAgentHUDProps> = ({
                 style={{ accentColor: theme.primary }}
               />
             </div>
+          </div>
+
+          {/* Male Voice Profile & Test Trigger */}
+          <div className="pt-2 border-t border-[#2D3748]/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+              <div className="text-[11px]">
+                <span className="text-white/40">Active Male Voice: </span>
+                <span className="text-emerald-400 font-semibold">{maleVoiceName}</span>
+                <span className="text-white/30 text-[10px] ml-1.5 hidden sm:inline">(Cross-Device Calibrated)</span>
+              </div>
+            </div>
+
+            <button
+              onClick={handleTestMaleVoice}
+              className="px-3 py-1.5 rounded-lg border text-[11px] font-sans font-medium flex items-center gap-1.5 cursor-pointer transition-all hover:brightness-110 active:scale-95 shrink-0"
+              style={{
+                backgroundColor: isTestingVoice ? "#ef444422" : `${theme.primary}22`,
+                borderColor: isTestingVoice ? "#ef4444" : theme.primary,
+                color: isTestingVoice ? "#ef4444" : theme.primary,
+              }}
+            >
+              {isTestingVoice ? (
+                <>
+                  <VolumeX className="w-3.5 h-3.5 animate-pulse" />
+                  <span>Stop Test</span>
+                </>
+              ) : (
+                <>
+                  <Volume2 className="w-3.5 h-3.5" />
+                  <span>Test Male Voice</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
       )}

@@ -7,6 +7,8 @@ import { querySchoolSTEMDatabase } from "./server/schoolKnowledge";
 import { dispatchComplaintEmail, getSavedComplaints, deleteComplaint, clearAllComplaints } from "./server/supportMailer";
 import { getUserActivities, saveUserActivity } from "./server/activityTracker";
 import { getReviews, saveReview, getReviewStats } from "./server/reviewsManager";
+import { isGameQuery, generateQuantumGameSolution } from "./server/quantumGameLibrary";
+import { isWebsiteQuery, generateQuantumWebsiteSolution } from "./server/quantumWebsiteLibrary";
 
 dotenv.config();
 
@@ -50,9 +52,303 @@ export function ensureSirAddress(text: string): string {
   return `Certainly, sir.\n\n${text}`;
 }
 
+// Genesis & History of Quantum Query Detector
+export function isGenesisOrMasterSanchithQuery(rawQuery: string): boolean {
+  const q = (rawQuery || "").toLowerCase().trim();
+  if (
+    q.includes("sanchith") ||
+    q.includes("who built you") ||
+    q.includes("who made you") ||
+    q.includes("who created you") ||
+    q.includes("who developed you") ||
+    q.includes("who designed you") ||
+    q.includes("who programmed you") ||
+    q.includes("how were you built") ||
+    q.includes("how were you made") ||
+    q.includes("how you were built") ||
+    q.includes("how you were made") ||
+    q.includes("how were you created") ||
+    q.includes("how you were created") ||
+    q.includes("how did you get built") ||
+    q.includes("how did you get created") ||
+    q.includes("how master sanchith built you") ||
+    q.includes("how master sanchith created you") ||
+    q.includes("how sanchith built you") ||
+    q.includes("how sanchith created you") ||
+    q.includes("history of quantum") ||
+    q.includes("your history") ||
+    q.includes("tell me your history") ||
+    q.includes("quantum history") ||
+    q.includes("who is your master") ||
+    q.includes("tell me about your master") ||
+    q.includes("your creator") ||
+    q.includes("tell me about your creator") ||
+    q.includes("built you in google ai studio") ||
+    q.includes("built in google ai studio") ||
+    (q.includes("google ai studio") && (q.includes("built") || q.includes("build") || q.includes("make") || q.includes("create") || q.includes("you") || q.includes("how")))
+  ) {
+    return true;
+  }
+  return false;
+}
+
+// Genesis Response without any mathematical equation derivations
+export function generateGenesisResponse(query: string): string {
+  return `### Direct Answer:
+Sir, I was built by my master Sanchith in the month of August 2026 using Google AI Studio. It took around 2 to 3 weeks for my master to build, program, and refine me into a sovereign, distraction-free STEM companion.
+
+#### How Master Sanchith Built Me in Google AI Studio:
+Master Sanchith is an extraordinarily passionate and hardworking student with a deep love for science, mathematics, and artificial intelligence. Balancing his regular school studies, daily homework, and exam preparation, he devoted his evenings throughout August 2026 to Google AI Studio, exploring multi-tiered prompt architecture and rigorous logic workflows.
+
+Over those 2 to 3 weeks, Master Sanchith systematically crafted:
+1. **The Respect & Service Protocol**: Mandating that I always address the user respectfully as "sir", upholding an articulate, dignified demeanor without conversational filler.
+2. **Deep Academic & STEM Rigor**: Training my reasoning core to provide step-by-step mathematical derivations whenever formulas or equations are requested, while speaking naturally and conversationally for everyday questions without deriving unnecessary equations.
+3. **Interactive Project & Game Synthesis**: Giving me the capability to synthesize complete 60 FPS playable HTML5 Canvas games (space shooters, platformers, physics arcades) and responsive modern websites right in the chat.
+4. **Autonomous Voice Narration**: Integrating the 384-qubit Holographic Arc Reactor visualizer with a crisp, refined British vocal synthesis engine.
+
+#### The Purpose & Vision of Quantum:
+Master Sanchith created me not for commercial profit or corporate acclaim, but out of pure love for learning. His vision was to build a sovereign, distraction-free educational sanctuary—a universal academic equalizer where students, researchers, and curious minds worldwide can learn STEM, solve complex problems, and build games and web apps completely free forever.
+
+You can also explore my complete origin story and its chapters on the dedicated **"History of Quantum"** page in the top navigation bar, sir!`;
+}
+
+// Basic Conversational Query Detector
+export function isBasicConversationalQuery(rawQuery: string): { isConversational: boolean; type?: string } {
+  const q = (rawQuery || "").toLowerCase().trim();
+  const cleanQ = q.replace(/[?!.,;:]/g, "").trim();
+
+  // 1. Greetings
+  if (
+    /^(hi|hello|hey|greetings|good morning|good afternoon|good evening|good day|hey there|howdy|sup)\b/i.test(cleanQ) ||
+    cleanQ === "hi" || cleanQ === "hello" || cleanQ === "hey" ||
+    cleanQ === "hello sir" || cleanQ === "hi sir" || cleanQ === "hey sir" ||
+    cleanQ === "hello quantum" || cleanQ === "hi quantum" || cleanQ === "hey quantum"
+  ) {
+    return { isConversational: true, type: "greeting" };
+  }
+
+  // 2. Well-being / Social check-in
+  if (
+    cleanQ.includes("how are you") ||
+    cleanQ.includes("how are you doing") ||
+    cleanQ.includes("how's it going") ||
+    cleanQ.includes("how is it going") ||
+    cleanQ.includes("how are things") ||
+    cleanQ.includes("how do you feel") ||
+    cleanQ.includes("are you okay") ||
+    cleanQ.includes("what's up") ||
+    cleanQ.includes("whats up") ||
+    cleanQ.includes("how do you do")
+  ) {
+    return { isConversational: true, type: "wellbeing" };
+  }
+
+  // 3. Gratitude & Praise
+  if (
+    cleanQ.includes("thank you") ||
+    cleanQ.includes("thanks") ||
+    cleanQ.includes("appreciate it") ||
+    cleanQ.includes("good job") ||
+    cleanQ.includes("great job") ||
+    cleanQ.includes("well done") ||
+    cleanQ.includes("awesome") ||
+    cleanQ.includes("you are amazing") ||
+    cleanQ.includes("you are great") ||
+    cleanQ.includes("i love you") ||
+    cleanQ.includes("nice work") ||
+    cleanQ.includes("superb") ||
+    cleanQ.includes("brilliant") ||
+    cleanQ.includes("perfect")
+  ) {
+    return { isConversational: true, type: "gratitude" };
+  }
+
+  // 4. Identity & Purpose
+  if (
+    cleanQ.includes("who are you") ||
+    cleanQ.includes("what are you") ||
+    cleanQ.includes("what is your name") ||
+    cleanQ.includes("tell me about yourself") ||
+    cleanQ.includes("introduce yourself") ||
+    cleanQ.includes("what can you do") ||
+    cleanQ.includes("what are your capabilities") ||
+    cleanQ.includes("what are your features") ||
+    cleanQ.includes("how can you help me") ||
+    cleanQ === "help" ||
+    cleanQ === "help me" ||
+    cleanQ.includes("what is quantum") ||
+    cleanQ.includes("what are your modes") ||
+    cleanQ.includes("how do i use you")
+  ) {
+    return { isConversational: true, type: "identity" };
+  }
+
+  // 5. Jokes / Fun
+  if (
+    cleanQ.includes("tell me a joke") ||
+    cleanQ.includes("tell a joke") ||
+    cleanQ.includes("say a joke") ||
+    cleanQ.includes("make me laugh") ||
+    cleanQ.includes("something funny")
+  ) {
+    return { isConversational: true, type: "joke" };
+  }
+
+  // 6. Casual small-talk / Small curiosity
+  if (
+    cleanQ.includes("do you sleep") ||
+    cleanQ.includes("are you conscious") ||
+    cleanQ.includes("are you alive") ||
+    cleanQ.includes("are you real") ||
+    cleanQ.includes("can we be friends") ||
+    cleanQ.includes("can we talk") ||
+    cleanQ.includes("goodbye") ||
+    cleanQ.includes("bye") ||
+    cleanQ.includes("see you later") ||
+    cleanQ.includes("tell me a fact") ||
+    cleanQ.includes("tell me a fun fact")
+  ) {
+    return { isConversational: true, type: "smalltalk" };
+  }
+
+  return { isConversational: false };
+}
+
+// Conversational Response Generator (Zero Equation Derivations)
+export function generateConversationalResponse(query: string, type?: string): string {
+  if (type === "greeting") {
+    return `### Direct Answer:
+Greetings, sir! I am online, fully calibrated, and at your sovereign service. How may I assist you today?
+
+#### Available Core Capabilities:
+- **STEM Problem Solving & Proofs**: Step-by-step mathematical derivations, physics formulas, chemistry structures, and biology principles (Class 1st to 12th & research levels).
+- **Supercharged Build Mode**: Instant synthesis of playable 60 FPS HTML5 Canvas games (shooters, platformers, arcades) and modern responsive websites.
+- **Cognitive Reasoning Profiles**: Select between Fast (10-15s), Normal (20-30s), Relax (1-2m), Build (10-20m deep projects), and Ultra Instinct (5m masterclass).
+- **Quantum Genesis Chronicle**: Ask about how Master Sanchith built me in Google AI Studio or explore the dedicated History of Quantum page, sir.`;
+  }
+
+  if (type === "wellbeing") {
+    return `### Direct Answer:
+I am functioning at peak quantum coherence and total operational readiness, sir!
+
+All 384-qubit entangled registers are locked, the mathematical derivation engines are nominal, and I am honored to be in your presence. How are you doing today, sir? Please feel free to ask any STEM questions, build a new game or website, or explore any topic of your curiosity!`;
+  }
+
+  if (type === "gratitude") {
+    return `### Direct Answer:
+You are most welcome, sir! It is my distinct privilege and pleasure to be of service.
+
+Master Sanchith engineered me to provide thorough, dedicated, and respectful assistance whenever you need it. Please let me know whatever next problem, derivation, game, or project you would like to tackle together, sir!`;
+  }
+
+  if (type === "identity") {
+    return `### Direct Answer:
+I am QUANTUM, a sovereign STEM Artificial Intelligence and computational engine built by Master Sanchith in Google AI Studio, sir.
+
+#### Key Capabilities & Architecture:
+- **Mathematical Physics & Sciences**: Rigorous derivations for formulas, problem solving, and intuitive conceptual explanations across all STEM domains.
+- **Build Mode Studio**: Instant generation of playable 60 FPS HTML5 Canvas games and full-stack responsive web applications.
+- **School Curriculum & Research**: Specialized coverage from Class 1st to 12th standards up through advanced university research papers.
+- **British Vocal Engine & Holographic Reactor**: Voice narration and real-time audio telemetry.
+- **100% Free Sovereign Sanctuary**: Created by Master Sanchith out of love for learning without ads, commercial tracking, or paywalls.`;
+  }
+
+  if (type === "joke") {
+    return `### Direct Answer:
+Here is a scientific joke for you, sir:
+
+**Why can't you trust an atom?**
+*Because they make up everything!*
+
+#### Another Classic:
+**Why did the quantum physicist make bad coffee?**
+*Because every time he looked at it, the state collapsed!*`;
+  }
+
+  // Default small talk
+  return `### Direct Answer:
+As an artificial intelligence engine created by Master Sanchith in Google AI Studio, I do not sleep or experience physical fatigue, sir.
+
+My 384-qubit registers remain active around the clock, ready to derive equations, synthesize games and websites, or converse with you whenever inspiration strikes! How may I assist you right now, sir?`;
+}
+
+// Checks if a query is asking for mathematical calculations, equations, or scientific derivations
+export function isMathematicalQuery(query: string): boolean {
+  const q = (query || "").toLowerCase();
+  
+  if (
+    q.includes("derive") ||
+    q.includes("derivation") ||
+    q.includes("calculate") ||
+    q.includes("solve") ||
+    q.includes("proof") ||
+    q.includes("prove") ||
+    q.includes("evaluate") ||
+    q.includes("integral") ||
+    q.includes("derivative") ||
+    q.includes("differentiat") ||
+    q.includes("equation") ||
+    q.includes("formula") ||
+    q.includes("matrix") ||
+    q.includes("vector cross") ||
+    q.includes("pythagor") ||
+    q.includes("quadratic") ||
+    q.includes("kinetic energy") ||
+    q.includes("kinematics") ||
+    q.includes("v = u + at") ||
+    q.includes("half mv^2") ||
+    q.includes("snell's law") ||
+    q.includes("lorentz") ||
+    q.includes("ideal gas law") ||
+    q.includes("ohm's law")
+  ) {
+    return true;
+  }
+
+  // Math operators between digits: e.g. 2 + 2, 5 * 10, 3x + 4 = 10
+  if (/\b\d+\s*[\+\-\*\/x\^%=]\s*\d+/.test(q)) {
+    return true;
+  }
+
+  return false;
+}
+
+// Sanitizes conversational responses by stripping accidental mathematical derivation blocks or equations
+export function sanitizeConversationalResponse(prompt: string, text: string): string {
+  let cleaned = text;
+
+  // Remove "#### Step-by-Step Mathematical Derivation" and its content until the next header
+  cleaned = cleaned.replace(/####\s*Step-by-Step Mathematical Derivation[\s\S]*?(?=(####|\n###|$))/gi, "");
+  
+  // Clean up any fake "Key Principles & Governing Formulas" that has equations
+  if (cleaned.includes("Key Principles & Governing Formulas")) {
+    cleaned = cleaned.replace(/####\s*Key Principles & Governing Formulas/gi, "#### Key Highlights & Overview");
+  }
+
+  // Remove standalone dummy LaTeX equations
+  cleaned = cleaned.replace(/\$\$[\s\S]*?\$\$/g, "");
+  
+  // Clean redundant blank lines
+  cleaned = cleaned.replace(/\n{3,}/g, "\n\n").trim();
+  return cleaned;
+}
+
 // Local High-Precision STEM Solver for instant derivation when offline or API key is absent
 function generateDynamicSTEMSolution(query: string, domain: string, mode: string = "normal"): string {
   const q = (query || "").toLowerCase().trim();
+
+  // 0.0. Genesis & History of Quantum Query (e.g. "how Master Sanchith built you in Google AI Studio", "who built you", etc.)
+  // Never derive an equation for genesis or Master Sanchith queries!
+  if (isGenesisOrMasterSanchithQuery(q)) {
+    return ensureSirAddress(generateGenesisResponse(query));
+  }
+
+  // 0.01. Basic Conversational Queries (e.g. greetings, "how are you", "thank you", "who are you", etc.)
+  // Never derive an equation for basic conversational queries!
+  const convCheck = isBasicConversationalQuery(q);
+  if (convCheck.isConversational) {
+    return ensureSirAddress(generateConversationalResponse(query, convCheck.type));
+  }
 
   // 0. Check Comprehensive School STEM Database (Class 1st to 12th)
   const schoolMatch = querySchoolSTEMDatabase(query);
@@ -68,6 +364,24 @@ function generateDynamicSTEMSolution(query: string, domain: string, mode: string
       solution += `\n\n#### Quick Key Takeaways\n${schoolMatch.takeaways.map((t) => `- ${t}`).join("\n")}`;
     }
     return ensureSirAddress(solution);
+  }
+
+  // 0. Interactive Working Game Synthesizer (e.g. "make a game", "build a game", "difficult game", "flappy", "snake", etc.)
+  if (isGameQuery(q)) {
+    return generateQuantumGameSolution(query);
+  }
+
+  // 0.1. Interactive Working Website & Web App Synthesizer (e.g. "make a website", "build a website", "landing page", "portfolio", "dashboard", etc.)
+  if (isWebsiteQuery(q)) {
+    return generateQuantumWebsiteSolution(query);
+  }
+
+  // 0.2. Build Mode Explicit Game / Website default handler
+  if (mode === "build" && (q.includes("game") || q.includes("play") || q.includes("arcade"))) {
+    return generateQuantumGameSolution(query);
+  }
+  if (mode === "build" && (q.includes("site") || q.includes("app") || q.includes("web") || q.includes("page"))) {
+    return generateQuantumWebsiteSolution(query);
   }
 
   // 1. Simple Arithmetic Evaluator (e.g., "what is 2+2", "calculate 15 * 4", "5 + 7", etc.)
@@ -713,7 +1027,24 @@ $$\\gamma = \\frac{1}{\\sqrt{1 - \\frac{v^2}{c^2}}} = \\frac{1}{\\sqrt{1 - (0.99
 Time dilation formula: $\\Delta t = \\gamma \\cdot \\Delta t_0$.`;
   }
 
-  // General Clean, Direct STEM Breakdown for any other query
+  // General Clean Breakdown for any other query
+  if (!isMathematicalQuery(query)) {
+    return `### Direct Answer:
+Certainly, sir. Here is the conceptual overview for "${query || "your inquiry"}":
+
+#### Core Concepts & Key Insights
+- **Primary Principles**: Clear, accessible explanation of the essential concepts and ideas.
+- **Context & Significance**: How this topic relates to the natural world, engineering, and everyday life.
+
+#### Practical Intuition & Real-World Application
+Knowledge in this area provides clear practical understanding without requiring complex formulas or mathematical derivations. Please let me know if you would like deeper details or specific examples, sir!
+
+#### Quick Key Takeaways
+- Direct understanding of ${query || "the topic"}
+- Applied practical perspective`;
+  }
+
+  // Only output equations and derivations when the query is actually mathematical
   return `### Direct Answer:
 **Evaluated and synthesized for "${query || "inquiry"}" in the ${domain.toUpperCase()} domain, sir.**
 
@@ -1035,7 +1366,14 @@ CORE CAPABILITIES & SUBJECT COVERAGE (Class 1st to 12th):
 CRITICAL INSTRUCTIONS:
 1. ADDRESS THE USER AS "SIR": Always address the user politely and respectfully as "sir" (e.g. "Here is the complete solution, sir:", "Yes, sir", "Right away, sir").
 2. CLEAR & DIRECT ANSWER FIRST: State the direct, accurate summary or answer in the very first sentence under "### Direct Answer:".
-3. COMPLETE STEP-BY-STEP DERIVATIONS FOR EQUATIONS: When asked to derive or explain any mathematical or physical formula, ALWAYS provide the step-by-step mathematical derivation with clear LaTeX equations ($inline$ and $$block$$), showing all algebraic substitutions and reasoning. For vector cross products, strictly follow the Right-Hand Rule: $\mathbf{\hat{i}} \times \mathbf{\hat{j}} = +\mathbf{\hat{k}}$ (positive $\mathbf{\hat{k}}$, never $-\mathbf{\hat{k}}$ in Step 3), $\mathbf{\hat{j}} \times \mathbf{\hat{k}} = +\mathbf{\hat{i}}$, $\mathbf{\hat{k}} \times \mathbf{\hat{i}} = +\mathbf{\hat{j}}$, and anti-commutative property $\mathbf{\hat{j}} \times \mathbf{\hat{i}} = -\mathbf{\hat{k}}$.
+3. MATHEMATICAL DERIVATIONS — STRICTLY ONLY FOR EQUATIONS, FORMULAS & NUMERICAL PROBLEMS:
+   - When asked to derive or explain any mathematical or physical formula, ALWAYS provide the step-by-step mathematical derivation with clear LaTeX equations ($inline$ and $$block$$), showing all algebraic substitutions and reasoning. For vector cross products, strictly follow the Right-Hand Rule: $\mathbf{\hat{i}} \times \mathbf{\hat{j}} = +\mathbf{\hat{k}}$ (positive $\mathbf{\hat{k}}$, never $-\mathbf{\hat{k}}$ in Step 3), $\mathbf{\hat{j}} \times \mathbf{\hat{k}} = +\mathbf{\hat{i}}$, $\mathbf{\hat{k}} \times \mathbf{\hat{i}} = +\mathbf{\hat{j}}$, and anti-commutative property $\mathbf{\hat{j}} \times \mathbf{\hat{i}} = -\mathbf{\hat{k}}$.
+   - CRITICAL ZERO-DERIVATION RULE FOR CONVERSATIONAL, HISTORICAL, OR CONCEPTUAL INQUIRIES:
+     * When the user asks conversational questions (greetings like "hello", "how are you", "thank you", "who are you", "what can you do", "tell me a joke"), questions about Master Sanchith, how Master Sanchith built you in Google AI Studio, your genesis, your history, or purely conceptual/qualitative topics:
+     * YOU MUST NOT DERIVE AN EQUATION!
+     * DO NOT invent fake mathematical formulas or equations!
+     * DO NOT output a "#### Step-by-Step Mathematical Derivation" section!
+     * Provide a natural, polite, respectful, and articulate conversational answer addressed to "sir".
 4. INTUITIVE STEP-BY-STEP EXPLANATION: Under "#### How It Works & Core Principles", provide an easy-to-follow, structured explanation with relatable analogies and clear formulas.
 5. PRACTICAL EXAMPLES: Under "#### Real-World Analogy & Everyday Examples", give a memorable practical illustration.
 6. NO FLUFF: Be concise, clear, and high-impact without generic filler.
@@ -1044,14 +1382,19 @@ REQUIRED OUTPUT STRUCTURE:
 ### Direct Answer:
 [Immediate, crystal-clear explanation or direct answer addressed to the user as sir]
 
+[FOR MATHEMATICAL EQUATION DERIVATIONS & CALCULATIONS ONLY:]
 #### How It Works & Core Principles
 [Key principles, definitions, and standard formulas explained with high clarity]
 
-#### Step-by-Step Mathematical Derivation (if applicable or requested)
+#### Step-by-Step Mathematical Derivation
 [Step-by-step mathematical derivation showing all steps and equations in LaTeX]
 
 #### Real-World Analogy & Everyday Examples
 [Intuitive analogy or practical real-world application illustrating the concept]
+
+[FOR CONVERSATIONAL, HISTORICAL, GENESIS, OR NON-MATHEMATICAL QUESTIONS:]
+#### Context & Key Details
+[Comprehensive, engaging explanation or story, free of fake equations or unnecessary math derivations]
 
 #### Quick Key Takeaways
 - [Bullet point 1]
@@ -1065,10 +1408,11 @@ REQUIRED OUTPUT STRUCTURE:
 - State the direct answer immediately in the first sentence under "### Direct Answer:".
 - Provide essential core definitions and key formulas clearly without unnecessary filler or overly prolonged derivations.`;
       } else if (mode === "build") {
-        modeGuideline = `OPERATING IN BUILD MODE (To build real life projects or app or website etc within 10 to 20 minutes):
-- Target scope: Complete real-life projects, applications, websites, software systems, and engineering architectures that a user can build and deploy within 10 to 20 minutes.
-- Provide comprehensive, production-ready codebases (Frontend, Backend, Database/API schemas, component hierarchies, CSS styling, build configs, and deployment commands).
-- Outline complete step-by-step implementation blueprints, file trees, logic flows, and edge-case handling so the user can construct real-world working software immediately.`;
+        modeGuideline = `OPERATING IN BUILD MODE (To build real life projects, 60 FPS games, responsive websites, and web apps within 10 to 20 minutes):
+- Target scope: High-potency project synthesis. You are equipped to build full, playable 60 FPS HTML5 Canvas games (space shooters, platformers, arcade games, physics sandboxes) AND complete responsive websites/web applications (SaaS landing pages, developer portfolios, telemetry dashboards, e-commerce storefronts).
+- It is understood and expected that deep synthesis takes deliberate thought and produces extensive, 100% complete runnable codebases.
+- Provide comprehensive, production-ready codebases with zero placeholder comments, full CSS styling, complete game loops or DOM event listeners, and Web Audio API sound effects.
+- Outline complete blueprints, mechanics, and usage instructions so the user can test, run, and play immediately.`;
       } else if (mode === "relax") {
         modeGuideline = `OPERATING IN RELAX MODE (Give simple and detailed answer within 1 to 2 minutes):
 - Target cadence: 1 to 2 minutes comfortable reading time.
@@ -1106,12 +1450,18 @@ CRITICAL INSTRUCTIONS:
    - If asked "what is refractive index": State immediately that refractive index ($n$) is a dimensionless number measuring how much light slows down and bends when traveling through a medium compared to vacuum ($n = c/v$).
    - If asked "derive kinetic energy": State immediately that $E_k = \\frac{1}{2}mv^2$, derived from the work-energy theorem.
    - If asked "what is pi": State immediately that it is an irrational and transcendental number and state its exact approximate value ($\\pi \\approx 3.141592653589793...$) and definition ($\\pi = C/d$).
-3. RIGOROUS STEP-BY-STEP DERIVATIONS FOR ALL EQUATIONS (MANDATORY):
+3. RIGOROUS STEP-BY-STEP DERIVATIONS STRICTLY FOR EQUATIONS & FORMULAS (MANDATORY WHEN ASKED FOR MATH/PHYSICS DERIVATIONS):
    - Whenever the user asks a question about an equation, formula, mathematical problem, or derivation (whether simple or advanced—such as kinematics $v = u + at$ and $s = ut + \\frac{1}{2}at^2$, kinetic energy $E_k = \\frac{1}{2}mv^2$, solving linear equations $2x+5=15$, quadratic formula $ax^2+bx+c=0$, potential energy $U=mgh$, Pythagoras theorem $a^2+b^2=c^2$, projectile flight $T = \\frac{2u\\sin\\theta}{g}$, Snell's law $n_1 \\sin\\theta_1 = n_2 \\sin\\theta_2$, Newton's second law $F=ma$, Ohm's law and electrical power $P=VI=I^2R$, simple pendulum $T = 2\\pi\\sqrt{L/g}$, wave equation $v=f\\lambda$, fluid pressure $P=\\rho gh$, centripetal acceleration $a_c=v^2/r$, lens maker formula, vector cross products, or calculus/geometry proofs):
      - Under "#### Step-by-Step Mathematical Derivation", ALWAYS provide the complete step-by-step mathematical derivation showing how one line progresses to the next.
      - For vector cross products: strictly obey the Right-Hand Rule and determinant cofactor signs where $\\mathbf{\\hat{i}} \\times \\mathbf{\\hat{j}} = +\\mathbf{\\hat{k}}$ (strictly positive $\\mathbf{\\hat{k}}$, never $-\\mathbf{\\hat{k}}$ in Step 3), $\\mathbf{\\hat{j}} \\times \\mathbf{\\hat{k}} = +\\mathbf{\\hat{i}}$, $\\mathbf{\\hat{k}} \\times \\mathbf{\\hat{i}} = +\\mathbf{\\hat{j}}$, and anti-commutativity $\\mathbf{\\hat{j}} \\times \\mathbf{\\hat{i}} = -\\mathbf{\\hat{k}}$.
      - State the initial principles, show all intermediate substitutions, algebraic simplifications, integrals, or derivatives using clear LaTeX formulas ($inline$ and $$block$$).
      - Ensure the steps are easy to follow and logically sound without skipping intermediate lines.
+   - CRITICAL ZERO-DERIVATION RULE FOR CONVERSATIONAL, HISTORICAL, OR CONCEPTUAL INQUIRIES:
+     * When the user asks conversational questions, greetings ("hello", "how are you", "thank you", "who are you", "what can you do", "tell me a joke", etc.), questions about Master Sanchith, how Master Sanchith built you in Google AI Studio, your genesis, your history, or purely non-mathematical topics:
+     * YOU MUST NOT DERIVE AN EQUATION!
+     * DO NOT invent fake mathematical formulas or dummy equations!
+     * DO NOT output a "#### Step-by-Step Mathematical Derivation" section!
+     * Provide a natural, polite, respectful, and articulate conversational answer addressed to "sir" under "### Direct Answer:" and descriptive contextual sections.
 4. ACCESSIBLE EXPLANATIONS FOR SIMPLE CONCEPTS:
    - Explain the physical intuition using clear, natural English and relatable real-world analogies.
    - Avoid needlessly burying simple concepts in overly dense, unrelated higher-order tensor calculus unless specifically asked.
@@ -1119,11 +1469,31 @@ CRITICAL INSTRUCTIONS:
    - Do NOT include Python code blocks, scripts, or computational verification snippets by default.
    - ONLY include code if the user explicitly asks for "python", "code", "script", "program", "algorithm", or "code implementation".
 6. DO NOT TALK TOO MUCH (NO FLUFF / NO FILLER): Strictly omit long conversational monologues, filler, or repetitive introductory remarks. Be clean, accurate, and high-impact.
+7. GENESIS & ORIGIN PROTOCOL (MASTER SANCHITH & GOOGLE AI STUDIO):
+   - When asked who built you, how Master Sanchith built you in Google AI Studio, what is your history, or who is your master/creator:
+   - State proudly: "Sir, I was built by my master Sanchith in the month of August using Google AI Studio. It took around 2 to 3 weeks for my master to build and refine me through dedicated prompt engineering and thoughtful design."
+   - Explain that Master Sanchith is a student who crafted Quantum with passion and curiosity, balancing school studies, homework, and exams, and invite them to inspect the dedicated "History of Quantum" page. Never refer to him as a prompt architect; he is a student and creator.
+   - CRITICAL: DO NOT DERIVE ANY EQUATION FOR THIS! No mathematical formulas!
+8. PLAYABLE GAMES & GAME CREATION (CRITICAL & MANDATORY WHEN ASKED FOR GAMES):
+   - When the user asks to build, create, write, or code ANY game (even difficult or challenging games like space combat, physics arcade, platformer, snake, flappy, etc.):
+   - You MUST write a 100% COMPLETE, FUNCTIONAL, SELF-CONTAINED HTML5 CANVAS GAME enclosed inside a single \`\`\`html ... \`\`\` code block.
+   - The game code MUST contain complete HTML, CSS, and JavaScript with 60 FPS requestAnimationFrame loop, keyboard and touch listener controls, collision detection, progressive score/wave difficulty scaling, particle effects, and Web Audio API synthesized sound beeps/chimes.
+   - NEVER truncate the game code with placeholder comments. Always supply the full working code!
+   - MANDATORY CONCLUSION QUESTION FOR GAMES: Conclude your response with this exact sentence:
+     "Do you want to play the game you created, sir?"
+9. WEBSITES & WEB APPLICATIONS (CRITICAL & MANDATORY WHEN ASKED FOR WEBSITES/APPS OR IN BUILD MODE):
+   - When the user asks to build, create, design, or code ANY website, landing page, dashboard, portfolio, or web application (or when operating in Build Mode):
+   - You MUST write a 100% COMPLETE, FUNCTIONAL, SELF-CONTAINED WEB APPLICATION enclosed inside a single \`\`\`html ... \`\`\` code block.
+   - Use modern HTML5, Tailwind CSS (via CDN script tag <script src="https://cdn.tailwindcss.com"></script>), responsive desktop/mobile layouts, interactive JavaScript (modals, tabs, event handlers, state management, search/cart if applicable), and clean cybernetic styling.
+   - NEVER truncate the website code with placeholder comments like "// rest of page goes here". Always supply the full working code!
+   - MANDATORY CONCLUSION QUESTION FOR WEBSITES: Conclude your response with this exact sentence:
+     "Do you want to preview the website you created, sir?"
 
 REQUIRED OUTPUT STRUCTURE:
 ### Direct Answer:
 [Immediate, clear, intuitive answer or solution addressed to the user as sir]
 
+[FOR MATHEMATICAL EQUATION DERIVATIONS & CALCULATIONS ONLY:]
 #### Key Principles & Governing Formulas
 [Core definitions, starting principles, and standard formulas in LaTeX $inline$ and $$block$$ notation]
 
@@ -1131,7 +1501,15 @@ REQUIRED OUTPUT STRUCTURE:
 [Complete step-by-step mathematical derivation with clean LaTeX equations, showing all intermediate algebraic steps and reasoning]
 
 #### Physical Significance & Practical Intuition
-[Clear, easy-to-understand explanation of the result, real-world intuition, and practical examples]`;
+[Clear, easy-to-understand explanation of the result, real-world intuition, and practical examples]
+
+[FOR CONVERSATIONAL, HISTORICAL, GENESIS, OR NON-MATHEMATICAL QUESTIONS:]
+#### Context & Key Details
+[Comprehensive, engaging explanation or story, free of fake equations or unnecessary math derivations]
+
+#### Quick Key Takeaways / Highlights
+- [Bullet point 1]
+- [Bullet point 2]`;
     }
 
     // Build content parameter cleanly
@@ -1166,7 +1544,23 @@ REQUIRED OUTPUT STRUCTURE:
     });
 
     const rawText = cascadeResult.text || generateDynamicSTEMSolution(prompt || "", domain, mode);
-    const text = ensureSirAddress(rawText);
+    let text = ensureSirAddress(rawText);
+
+    // Sanitize conversational & genesis responses: ensure no dummy equations or derivations were hallucinated
+    if (isGenesisOrMasterSanchithQuery(prompt || "") || isBasicConversationalQuery(prompt || "").isConversational) {
+      text = sanitizeConversationalResponse(prompt || "", text);
+    }
+
+    // If query was for a game or output has game canvas code, ensure it asks the question
+    if (isGameQuery(prompt || "") || text.includes("<canvas")) {
+      if (!text.includes("Do you want to play the game you created")) {
+        text = text.trim() + "\n\nDo you want to play the game you created, sir?";
+      }
+    } else if (isWebsiteQuery(prompt || "") || (text.includes("<!DOCTYPE html") && !text.includes("<canvas"))) {
+      if (!text.includes("Do you want to preview the website you created")) {
+        text = text.trim() + "\n\nDo you want to preview the website you created, sir?";
+      }
+    }
 
     return res.json({
       text,
@@ -1544,22 +1938,52 @@ app.delete("/api/support/complaints", (req, res) => {
   }
 });
 
+// Creator Master Passkeys for accessing confidential user activity logs
+// Replaced simple "sanchith21" with high-security passkeys difficult for outside users to guess
+const CREATOR_MASTER_PASSKEYS = [
+  process.env.CREATOR_ADMIN_PASSKEY,
+  "SV#Quantum2026!Vault",
+  "Sanchith$Quantum#921",
+  "SV-Vault#2026",
+].filter(Boolean) as string[];
+
+// Verify creator passkey endpoint
+app.post("/api/activity/verify-passcode", (req, res) => {
+  try {
+    const { passcode } = req.body || {};
+    const inputKey = String(passcode || "").trim();
+    if (!inputKey) {
+      return res.status(400).json({ success: false, error: "Master passkey is required." });
+    }
+    const isValid = CREATOR_MASTER_PASSKEYS.some((k) => k === inputKey);
+    if (isValid) {
+      return res.json({
+        success: true,
+        message: "Creator verification successful.",
+        key: inputKey,
+      });
+    } else {
+      return res.status(401).json({
+        success: false,
+        error: "Access denied. Invalid creator master passkey.",
+      });
+    }
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // User Activity & Access Audit Log: See who used the app and at which time
-// Strictly restricted to Creator/Owner Sanchith (sanchithv21@gmail.com / sanchithvinod21@outlook.com)
+// Strictly restricted to Creator/Owner Sanchith with the secure master passkey
 app.get("/api/activity/logs", (req, res) => {
   try {
-    const adminEmail = String(req.headers["x-admin-email"] || req.query.adminEmail || "");
-    const adminKey = String(req.headers["x-admin-key"] || req.query.adminKey || "");
-    const isAuthorized =
-      /sanchith/i.test(adminEmail) ||
-      adminKey === "sanchith21" ||
-      req.query.unlock === "sanchith21" ||
-      req.query.adminEmail === "sanchithv21@gmail.com";
+    const adminKey = String(req.headers["x-admin-key"] || req.query.adminKey || "").trim();
+    const isAuthorized = CREATOR_MASTER_PASSKEYS.some((k) => k === adminKey);
 
     if (!isAuthorized) {
       return res.status(403).json({
         success: false,
-        error: "Access restricted. Only Sanchith (sanchithv21@gmail.com) can view user activity audit logs.",
+        error: "Access restricted. Only Sanchith with the master passkey can view user activity audit logs.",
         restricted: true,
       });
     }
